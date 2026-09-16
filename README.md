@@ -30,8 +30,8 @@ Everything here is organised around not having to pay that cost very often.
 | 2 | Unity Play Mode + XR Interaction Simulator | ~5s | no | scene wiring, feedback, boat feel |
 | 3 | `make dev` | 2–8 min | yes | real tracking fidelity, perf, comfort |
 
-Tier 1 is plain `dotnet test` against `src/RowVR.Stroke/` — a netstandard2.1 library with
-**zero `UnityEngine` dependency**. Stroke detection is signal processing; it has no business
+Tier 1 is plain `dotnet test` against the stroke library — netstandard2.1, with **zero
+`UnityEngine` dependency**, enforced by the asmdef rather than by convention. Stroke detection is signal processing; it has no business
 needing an engine, let alone a headset. Record a real stroke on-device once, and iterate
 against it forever with the headset on the shelf.
 
@@ -53,12 +53,18 @@ make test          # tier 1: stroke detector tests, no Unity, no headset
 ## Layout
 
 ```
-Assets/              Unity project
-  Editor/            BuildQuest.cs — headless -executeMethod build entry point
-  Scripts/Rowing/    Unity-side adapters onto RowVR.Stroke
-  Scripts/Recording/ HandRecorder — dumps joint streams on-device
-src/RowVR.Stroke/    engine-free stroke detection (netstandard2.1)
-tests/               dotnet tests + recorded clip fixtures
-tools/               dev loop shell scripts
-docs/dev-loop.md     the runbook
+Assets/
+  Editor/              BuildQuest.cs, ProjectBootstrap.cs — headless build, settings-as-code
+  Scripts/Stroke/      engine-free stroke detection. Cannot reference UnityEngine.
+  Scripts/Rowing/      Unity adapters: XR Hands -> the detector
+  Scripts/Recording/   HandRecorder — writes .rowclip files on-device
+  Tests/EditMode/      only tests that genuinely need Unity types
+src/RowVR.Stroke/      csproj that compiles Assets/Scripts/Stroke with plain dotnet
+tests/                 the fast test suite + committed .rowclip fixtures
+tools/                 dev loop shell scripts
+docs/dev-loop.md       the runbook — start here
 ```
+
+The stroke sources live under `Assets/` because Unity must own them; `src/RowVR.Stroke/`
+links the same files so `dotnet test` can build them with no Unity, no licence and no
+headset. One source of truth, two compilers.
