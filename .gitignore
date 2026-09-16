@@ -1,0 +1,65 @@
+# ---- Unity ----
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# Never ignore Packages/ itself; only its local cache.
+/[Pp]ackages/packages-lock.json.meta
+
+# Asset meta files must be committed for anything that is tracked.
+# (Handled by Unity's "Visible Meta Files" mode; see CLAUDE.md.)
+
+# ---- IDE / generated project files ----
+# Anchored to the repo root on purpose: Unity regenerates its .csproj/.sln there every
+# time it reimports, but src/ and tests/ hold hand-written project files that MUST be
+# committed - an unanchored *.csproj silently excludes them and the dotnet build breaks
+# on a fresh clone.
+/*.csproj
+/*.sln
+*.unityproj
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+.vscode/
+!.vscode/extensions.json
+
+# ---- Build artifacts ----
+*.apk
+*.aab
+*.unitypackage
+*.app
+artifacts/
+dist/
+
+# ---- .NET (src/, tests/) ----
+bin/
+[Oo]bj/
+*.nupkg
+TestResults/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+*~
+
+# ---- Local dev loop state ----
+.devloop/
+tools/local.env
+
+# Raw pulls off the headset land here before being promoted to a test fixture.
+# Promoted clips live in tests/RowVR.Stroke.Tests/fixtures/ and ARE committed.
+recordings/raw/

@@ -1,0 +1,20 @@
+{
+  "name": "RowVR.Editor",
+  "rootNamespace": "RowVR.Editor",
+  "references": [
+    "RowVR.Stroke",
+    "RowVR.Rowing",
+    "RowVR.Recording"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

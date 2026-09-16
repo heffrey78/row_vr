@@ -1,0 +1,19 @@
+{
+  "name": "RowVR.Rowing",
+  "rootNamespace": "RowVR.Rowing",
+  "references": [
+    "RowVR.Stroke",
+    "Unity.XR.Hands",
+    "Unity.XR.CoreUtils",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
