@@ -63,3 +63,10 @@ tools/local.env
 # Raw pulls off the headset land here before being promoted to a test fixture.
 # Promoted clips live in tests/RowVR.Stroke.Tests/fixtures/ and ARE committed.
 recordings/raw/
+
+# ---- lifecycle tracker ----
+# SQLite's write-ahead log and shared-memory sidecars. These churn on every read and are
+# meaningless without the database they belong to, so they are never committed - whichever
+# way the lifecycle.db question itself is settled (TASK-0012).
+lifecycle.db-shm
+lifecycle.db-wal

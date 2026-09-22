@@ -45,7 +45,7 @@ seconds — and that cost is the reason this repo is shaped the way it is.
 
 ```sh
 sudo apt install android-sdk-platform-tools   # Debian/Ubuntu
-sudo pacman -S android-tools                  # Arch
+sudo pacman -S android-tools                  # Arch / CachyOS
 sudo dnf install android-tools                # Fedora
 ```
 
@@ -54,21 +54,70 @@ sudo dnf install android-tools                # Fedora
 Without this, `adb devices` shows your headset as `no permissions` and every guide you find
 will tell you to do something unrelated.
 
+There are two halves to it: a **rule** granting access to a group, and **your account being
+in that group**. Getting one without the other looks exactly like getting neither.
+
+**Arch / CachyOS** — use the packaged rules. The `android-udev` package installs them into
+`/usr/lib/udev/rules.d` and creates the group they grant access to, which is `adbusers`.
+There is no `plugdev` group on Arch, so instructions telling you to join one are for a
+different distro:
+
 ```sh
-echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2833", MODE="0666", GROUP="plugdev"' \
+sudo pacman -S android-udev
+sudo usermod -aG adbusers "$USER"     # log out and back in for this to take effect
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+**Debian / Ubuntu** — the packaged rules use `plugdev`:
+
+```sh
+sudo apt install android-sdk-platform-tools-common
+sudo usermod -aG plugdev "$USER"      # log out and back in for this to take effect
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+**Any distro, by hand** — if no package provides rules, write one. `2833` is Meta/Oculus:
+
+```sh
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2833", MODE="0666"' \
   | sudo tee /etc/udev/rules.d/51-oculus.rules
 sudo udevadm control --reload-rules && sudo udevadm trigger
-sudo usermod -aG plugdev "$USER"      # log out and back in for this to take effect
+```
+
+Then check:
+
+```sh
 adb kill-server && adb devices
 ```
 
-`2833` is Meta/Oculus. You should see your serial and the word `device`.
+You should see your serial and the word `device`. A group change does **not** apply to
+existing sessions — log out and back in, not just a new terminal.
 
 ### 1.4 Host: Unity
 
 Install **Unity Hub**, then the Editor version this project is pinned to — read it from
 `ProjectSettings/ProjectVersion.txt` rather than assuming, because that is the version the
 build scripts look for.
+
+**Arch / CachyOS:** `paru -S unityhub`. The AUR package is not a third-party rebuild — it
+repackages Unity's own official `.deb` from `hub.unity3d.com` as a native Arch package, so
+it is the same binary Ubuntu gets, with dependencies handled by pacman. Prefer it over the
+AppImage: no FUSE workarounds, and it installs Editors to `~/Unity/Hub/Editor/<version>/`,
+which is the first path `find_unity()` in `tools/common.sh` looks in, so preflight finds it
+with no `UNITY_PATH` needed.
+
+If that package is flagged out of date, it usually does not matter — the Hub is only a
+launcher and the Editor version is pinned by this project anyway. The one failure mode is
+an older Hub not listing the pinned Editor; if that happens, use the Unity download archive
+link for that exact version, which hands off to the Hub directly.
+
+**Any other distro:** the AppImage from
+`https://public-cdn.cloud.unity3d.com/hub/prod/UnityHubSetup-x86_64.AppImage`. If it fails
+with a FUSE error, run it with `--appimage-extract-and-run`.
+
+Unity officially supports Ubuntu only; RHEL/Fedora are explicitly unsupported and Arch is
+not mentioned at all. That applies to the AppImage too — it is more portable, not more
+supported.
 
 Required modules (tick them during install; adding them later means a re-download):
 
@@ -85,10 +134,18 @@ UNITY_PATH=/opt/unity/editors/6000.3.12f1/Editor/Unity
 ### 1.5 Host: the rest
 
 ```sh
-sudo apt install scrcpy          # headset casting; the MQDH replacement
-sudo apt install dotnet-sdk-8.0  # tier 1 tests. Not optional — this is the fast loop.
+# Arch / CachyOS
+sudo pacman -S scrcpy dotnet-sdk-8.0 git-lfs
+
+# Debian / Ubuntu
+sudo apt install scrcpy dotnet-sdk-8.0 git-lfs
+
 git lfs install                  # binary assets go through LFS
 ```
+
+`scrcpy` is headset casting, the MQDH replacement. The .NET SDK is **not** optional — it is
+the entire fast loop. A system JDK is not needed: Unity ships its own with the Android
+module.
 
 Point git at Unity's merge tool so scenes and prefabs merge instead of conflicting:
 
@@ -285,18 +342,27 @@ deliberately, in its own commit.
 
 ## 7. Verification checklist
 
-Nothing below has been run on real hardware — it was written in a container with no Unity,
-no Android SDK and no headset. Work through it in order; each step tells you which layer is
-broken if it fails.
+This file was originally written in a container with no Unity, no Android SDK and no
+headset, so none of it had been run. That is progressively being fixed. What is ticked
+below has been executed on real hardware and is dated; what is not ticked has still never
+run, and is not a claim.
 
-- [ ] `make preflight` — all green
+**Host:** CachyOS, kernel 7.2.6. **Headset:** Quest 3.
+
+- [x] `make preflight` — host tools green *(2026-09-22)*. adb 1.0.41, scrcpy 4.1,
+      dotnet SDK 8.0.131, udev rules from `android-udev` at
+      `/usr/lib/udev/rules.d/51-android.rules`, account in `adbusers`. Unity and the
+      device are still outstanding, so it exits non-zero overall.
 - [ ] Unity opens the project without errors
 - [ ] `make bootstrap` — settings applied; do the manual XR steps it lists
 - [ ] `make cast` — you can see the headset view
 - [ ] `make dev` — builds, installs, launches, logs stream. **Note the wall-clock time**; it
       sets your expectations for tier 3 forever
 - [ ] Play Mode with the XR Interaction Simulator — simulated hands drive the scene
-- [ ] `make test` — 30 tests pass
+- [x] `make test` — 30 tests pass *(2026-09-22)*. **2.65s warm**, 8.1s cold including
+      .NET first-run setup; test execution itself is ~120ms and the rest is MSBuild.
+      Compiled clean on first contact with a compiler, with Unity not installed on the
+      machine at all — which is the engine-free claim proved rather than asserted.
 - [ ] Record a stroke → `make pull-recordings` → `make promote` → `make test` against it
 
 ---
