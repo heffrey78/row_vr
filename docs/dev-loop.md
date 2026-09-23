@@ -171,6 +171,16 @@ going further.
 make bootstrap
 ```
 
+Then build the scene, once, from the Editor menu: **RowVR > Create Rowing Scene**. It
+creates `Assets/Scenes/Row.unity` with a floor-relative XR Origin and a Rowing Rig whose
+`trackingOrigin` and `head` are already wired, and registers the scene in Build Settings -
+`make build` aborts when that list is empty. Commit the scene; from then on it is an
+ordinary scene you edit in the Editor.
+
+The wiring is done in code for one reason: hand joints arrive in tracking space, so a rig
+with `trackingOrigin` unset reports a handle parked at the world origin, forever, with no
+error anywhere. That is the single most confusing failure this project has.
+
 `make bootstrap` applies the Quest configuration from `Assets/Editor/ProjectBootstrap.cs`
 (IL2CPP, ARM64, Vulkan, Linear, targetSdk 34, text serialization, 4x MSAA). It prints a
 short list of things it cannot set reliably from code — mostly XR Plug-in Management
@@ -206,9 +216,15 @@ Tests run against two things: synthetic rowing motion of exactly known timing
 
 ### Tier 2 — Unity Play Mode (~5s, no headset)
 
-Press Play with the **XR Interaction Simulator** in the scene (`GameObject > XR > XR
-Interaction Simulator`). It simulates *hands*, not just controllers, which is what makes it
-a real substitute here given Meta XR Simulator does not run on Linux.
+Press Play with the **XR Interaction Simulator** in the scene. It simulates *hands*, not
+just controllers, which is what makes it a real substitute here given Meta XR Simulator does
+not run on Linux.
+
+> The simulator is **not** a `GameObject > XR` menu item. It ships as a package *sample*,
+> so it does not exist in the project until you import it: **Window > Package Manager > XR
+> Interaction Toolkit > Samples > XR Interaction Simulator > Import**. That drops it under
+> `Assets/Samples/`, and the prefab can then go in the scene. `RowVR > Create Rowing Scene`
+> adds it automatically if it has already been imported, and warns if it has not.
 
 For scene wiring, UI, audio, feedback and boat feel. Good enough to iterate on how the thing
 *reads*; not good enough to judge real tracking.
@@ -217,7 +233,7 @@ Play Mode is configured to skip domain and scene reload, which is most of the sp
 cost: statics are not reset between runs, so anything static needs
 `[RuntimeInitializeOnLoadMethod]` to reset itself.
 
-### Tier 3 — `make dev` (2–8 min, headset)
+### Tier 3 — `make dev` (1 min warm, ~13 min for the first build, headset)
 
 ```sh
 make connect     # once per session, if you want to be free of the cable
@@ -226,6 +242,24 @@ make dev         # build → install → launch → tail logs
 
 Ground truth: real hand-tracking fidelity, real performance, real comfort. Nothing else
 substitutes, and nothing else should be used for anything a lower tier can answer.
+
+Measured on this machine (CachyOS, Quest 3, Unity 6000.6.2f1), 2026-09-23:
+
+| what changed | build | APK | `make dev` total |
+|---|---|---|---|
+| cold, empty `Library/Bee` | 790s | 91 MB | 13:16 |
+| settings or scene only, cache warm | 50-65s | 105-150 MB | ~1:00 |
+| script edit in an existing assembly | ~122s | 150 MB | ~2:07 |
+| new assemblies (imported a package sample) | 579s | 150 MB | 9:46 |
+
+The number that matters is **what changed**, not whether the cache is warm. Editing a
+script inside an assembly that already exists is the ~1 minute case. Adding an assembly -
+importing a package sample, adding an asmdef - invalidates most of the IL2CPP work and
+costs nearly as much as a cold build. Plan sample imports and package changes as
+batched, deliberate events rather than sprinkling them through a session.
+
+Tier 1 remains ~25x faster than even the best tier 3 case and needs no headset, so the
+ordering advice stands.
 
 Individually:
 
@@ -325,6 +359,21 @@ the Editor. Unity Hub → your version → gear → Add modules.
 **Unity build "succeeds" but the APK is stale** → this is exactly why `tools/build.sh` does
 not pass `-quit`. With `-quit`, Unity exits 0 even on a failed build. If you edit the build
 scripts, keep `EditorApplication.Exit` doing the work.
+
+**Hand tracking does not engage at all** → your controllers are probably awake. Horizon OS
+switches input modality automatically, and while a controller is powered on and held, hand
+tracking is disabled at the *system* level - the app cannot override it. In logcat this
+reads as:
+
+```
+TrackingService: [HANDTRACKING] Controller ... in hand: Y
+ServiceHandStateProcessor: HANDTRACKING hand 0 status set to Disabled
+ModalityTransitionsPolicyManager: Switching to Tracked Remotes only   TRACKED REMOTES
+ControllerNotifications: ... mHandTrackingEnabled?: false
+```
+
+Put the controllers down, out of reach, and let them sleep. This is very easy to mistake for
+a detector bug, because the app looks like it is running fine and simply never sees a hand.
 
 **Hands track but nothing registers as a stroke** → check `XRHandsPoseSource` is being given
 the XR Origin transform. Joint poses arrive in tracking space; without that conversion the

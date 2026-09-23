@@ -28,7 +28,7 @@ Everything here is organised around not having to pay that cost very often.
 |---|---|---|---|---|
 | 1 | `make test` | ~2s | no | stroke phase logic, cadence, smoothing |
 | 2 | Unity Play Mode + XR Interaction Simulator | ~5s | no | scene wiring, feedback, boat feel |
-| 3 | `make dev` | 2–8 min | yes | real tracking fidelity, perf, comfort |
+| 3 | `make dev` | ~1 min, or ~10 min if assemblies changed | yes | real tracking fidelity, perf, comfort |
 
 Tier 1 is plain `dotnet test` against the stroke library — netstandard2.1, with **zero
 `UnityEngine` dependency**, enforced by the asmdef rather than by convention. Stroke detection is signal processing; it has no business
