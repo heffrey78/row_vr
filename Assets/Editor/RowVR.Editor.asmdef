@@ -4,7 +4,12 @@
   "references": [
     "RowVR.Stroke",
     "RowVR.Rowing",
-    "RowVR.Recording"
+    "RowVR.Recording",
+    "Unity.XR.CoreUtils",
+    "Unity.XR.Management",
+    "Unity.XR.Management.Editor",
+    "Unity.XR.OpenXR",
+    "Unity.XR.OpenXR.Editor"
   ],
   "includePlatforms": [
     "Editor"
