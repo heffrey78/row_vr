@@ -28,13 +28,6 @@ else
      Debian/Ubuntu : sudo apt install scrcpy"
 fi
 
-if command -v java >/dev/null 2>&1; then
-  ok "java           $(java -version 2>&1 | head -1 | tr -d '"')"
-else
-  warn "No system JDK. Unity ships its own OpenJDK with the Android module, so this is
-     usually fine — only a concern if builds fail looking for JAVA_HOME."
-fi
-
 if command -v dotnet >/dev/null 2>&1; then
   ok "dotnet         $(dotnet --version 2>/dev/null)"
 else
@@ -56,6 +49,47 @@ else
        - OpenJDK
        - Android SDK & NDK Tools
      Then set UNITY_PATH in tools/local.env if it lives somewhere unusual."
+fi
+
+# --- jdk --------------------------------------------------------------------
+# Unity ships its own OpenJDK with the Android module and builds with that one, not with
+# whatever is on PATH. Checking only for a system `java` reports "no JDK" on a machine
+# whose Android module is correctly installed, which sends you installing a JDK the build
+# will never use. Check the bundled one first.
+bundled_jdk=""
+if [[ -n "${unity_bin:-}" ]]; then
+  candidate="$(dirname "$unity_bin")/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java"
+  [[ -x "$candidate" ]] && bundled_jdk="$candidate"
+fi
+
+if [[ -n "$bundled_jdk" ]]; then
+  ok "jdk            $("$bundled_jdk" -version 2>&1 | head -1 | tr -d '"') (Unity bundled)"
+elif command -v java >/dev/null 2>&1; then
+  ok "jdk            $(java -version 2>&1 | head -1 | tr -d '"') (system)"
+else
+  warn "No JDK found — neither Unity's bundled one nor a system install.
+     Unity's comes with the Android module: Hub > Installs > gear > Add modules >
+     Android Build Support > OpenJDK. Prefer that over a system JDK; it is the one
+     the build actually uses."
+fi
+
+# --- android build support --------------------------------------------------
+# Without these, 'make build' fails looking for the Android SDK. Checking here turns a
+# confusing mid-build failure into an obvious precondition.
+if [[ -n "${unity_bin:-}" ]]; then
+  android_root="$(dirname "$unity_bin")/Data/PlaybackEngines/AndroidPlayer"
+  missing_android=()
+  for component in SDK NDK OpenJDK; do
+    [[ -e "$android_root/$component" ]] || missing_android+=("$component")
+  done
+  if [[ -d "$android_root" ]] && (( ${#missing_android[@]} == 0 )); then
+    ok "android        SDK, NDK and OpenJDK present"
+  else
+    note "Android Build Support is incomplete for this Editor (missing: ${missing_android[*]:-the module itself}).
+     Hub > Installs > your version > gear > Add modules > Android Build Support,
+     including its OpenJDK and Android SDK & NDK Tools children. 'make build' cannot
+     work without them."
+  fi
 fi
 
 # --- udev (the classic first-hour blocker) ----------------------------------

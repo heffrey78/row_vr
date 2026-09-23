@@ -70,3 +70,9 @@ recordings/raw/
 # way the lifecycle.db question itself is settled (TASK-0012).
 lifecycle.db-shm
 lifecycle.db-wal
+
+# Unity/IL2CPP build scratch and the Editor's crash-recovery autosave. Both regenerate,
+# and a _Recovery scene committed by accident would sit alongside the real one.
+.utmp/
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta

@@ -6,7 +6,11 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# ${BASH_SOURCE[0]:-$0}, not ${BASH_SOURCE[0]}: under `set -u` an unset BASH_SOURCE is a
+# hard error, which happens when this file is sourced from a non-bash shell. The scripts
+# themselves are #!/usr/bin/env bash so `make` is unaffected, but sourcing common.sh by
+# hand from zsh or fish used to resolve REPO_ROOT to / and then fail somewhere unrelated.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 readonly REPO_ROOT
 
 # --- output -----------------------------------------------------------------
