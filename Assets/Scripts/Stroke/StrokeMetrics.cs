@@ -26,7 +26,11 @@ namespace RowVR.Stroke
         /// <summary>Handle travel along the drive axis, in metres.</summary>
         public readonly float StrokeLengthMetres;
 
-        /// <summary>How many full strokes have been completed since the detector was reset.</summary>
+        /// <summary>
+        /// How many catch-to-catch intervals have been measured since the detector was reset.
+        /// An interval spanning a pause is not measured, so this runs one behind the rower's
+        /// own count for each stop they make; count catches to count strokes.
+        /// </summary>
         public readonly int CompletedStrokes;
 
         public StrokeMetrics(

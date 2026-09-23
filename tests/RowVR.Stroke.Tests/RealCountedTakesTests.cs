@@ -11,11 +11,10 @@ namespace RowVR.Stroke.Tests
     /// 2026-09-23 on a Quest 3 (firmware UP1A.231005.007.A1). Each take starts and ends at
     /// rest, so there is no cold-start artefact from slicing.
     ///
-    /// Where the detector falls short of the truth, the tests are split in two. A passing
-    /// test pins the current accuracy as a floor, so a regression fails `make test`. An
-    /// ignored test states the target, to be switched on when tuning reaches it. The ranges
-    /// run from "what the detector does now" to "what is true", so a fix never breaks the
-    /// floor test.
+    /// Before the detector understood pauses, it counted 11 of 12 in both takes (the first
+    /// stroke from rest was lost) and scored hands coming up off the lap after the sloppy
+    /// take as a stroke - so the sloppy take's "12" was 11 real strokes plus a phantom.
+    /// These tests hold the exact truth now that it is met.
     /// </summary>
     [TestFixture]
     public class RealCountedTakesTests
@@ -28,7 +27,7 @@ namespace RowVR.Stroke.Tests
 
         // Sloppy: rowing to ~32.5s. Hands then drop to the lap (tracking drops out for
         // 1.4s at ~35s), rest completely still until ~41s, and come up at ~42s - reaching
-        // for the headset. That movement is counted as a stroke today.
+        // for the headset.
         const string Sloppy = "real-sloppy-12strokes-20260923.rowclip";
         const double SloppyRowingEnd = 32.8, SloppyAfterStart = 33.5;
 
@@ -69,20 +68,21 @@ namespace RowVR.Stroke.Tests
         static string Describe(IEnumerable<Catch> catches) =>
             string.Join(", ", catches.Select(c => $"{c.Time:F1}s@{c.Rate:F1}"));
 
-        // ---- floors: current accuracy, must not regress --------------------------------
-
         [TestCase(Steady, SteadyRowingEnd)]
         [TestCase(Sloppy, SloppyRowingEnd)]
-        public void CountsAtLeastElevenOfTwelveStrokes(string fixture, double rowingEnd)
+        public void CountsAllTwelveStrokesIncludingTheFirstFromRest(string fixture, double rowingEnd)
         {
             var rowing = Window(fixture, 0, rowingEnd);
-            Assert.That(rowing.Count, Is.InRange(RowedStrokes - 1, RowedStrokes), Describe(rowing));
+            Assert.That(rowing.Count, Is.EqualTo(RowedStrokes), Describe(rowing));
         }
 
-        [Test]
-        public void SteadyTakeHasNoStrokesAfterTheRowerStops()
+        [TestCase(Steady, SteadyAfterStart)]
+        [TestCase(Sloppy, SloppyAfterStart)]
+        public void NothingIsCountedAfterTheRowerStops(string fixture, double afterStart)
         {
-            var after = Window(Steady, SteadyAfterStart, double.MaxValue);
+            // The sloppy take is the hard one: hands drop to the lap, rest ~6s, then come up
+            // to reach for the headset. The steady take ends with a reach for the headset too.
+            var after = Window(fixture, afterStart, double.MaxValue);
             Assert.That(after, Is.Empty, Describe(after));
         }
 
@@ -96,28 +96,6 @@ namespace RowVR.Stroke.Tests
             Assert.That(median, Is.InRange(26f, 31f), string.Join(", ", rates));
             foreach (var rate in rates)
                 Assert.That(rate, Is.EqualTo(median).Within(12).Percent, string.Join(", ", rates));
-        }
-
-        // ---- targets: known weaknesses, for tuning -----------------------------------
-
-        [Test]
-        [Ignore("Known weakness, a tuning target: the first stroke from rest is never counted. The " +
-                "detector needs to observe the rower's range before it calls a catch, so 12 rowed " +
-                "strokes read as 11. Also seen when a session is sliced mid-set.")]
-        public void CountsTheFirstStrokeFromRest()
-        {
-            var rowing = Window(Steady, 0, SteadyRowingEnd);
-            Assert.That(rowing.Count, Is.EqualTo(RowedStrokes), Describe(rowing));
-        }
-
-        [Test]
-        [Ignore("Known weakness, a tuning target: after ~6s completely at rest, the rower's hands " +
-                "rising from the lap (~42s) are counted as a stroke - 0.59m long, 5.2s recovery, " +
-                "nothing like the strokes before it.")]
-        public void HandsComingUpAfterStoppingAreNotAStroke()
-        {
-            var after = Window(Sloppy, SloppyAfterStart, double.MaxValue);
-            Assert.That(after, Is.Empty, Describe(after));
         }
     }
 }

@@ -58,6 +58,24 @@ namespace RowVR.Stroke
         float _strokeMax = float.MinValue;
         StrokeMetrics _metrics;
 
+        // Pause tracking. See StrokeDetectorSettings.PauseSeconds.
+        bool _still;
+        double _stillSince;
+        double _restEndTime;
+        bool _pauseHandled;
+        // After a pause: travel must be rebuilt before any phase is reported.
+        bool _needTravel;
+        float _sinceRestMin;
+        float _sinceRestMax;
+        // After a pause held at the catch position, the first drive away is that stroke's catch.
+        bool _restWasAtCatch;
+        float _restPosition;
+        // Extent of the last complete stroke. Unlike the session range this does not decay,
+        // so "was the rest at the catch?" can still be answered long after rowing stopped.
+        bool _hasStrokeExtent;
+        float _lastStrokeMin;
+        float _lastStrokeMax;
+
         public StrokeDetector(StrokeDetectorSettings settings = null)
         {
             _settings = settings ?? new StrokeDetectorSettings();
@@ -83,6 +101,11 @@ namespace RowVR.Stroke
             _extremumTime = 0d;
             _extremumValue = 0f;
             _metrics = default;
+            _still = false;
+            _pauseHandled = false;
+            _needTravel = false;
+            _restWasAtCatch = false;
+            _hasStrokeExtent = false;
         }
 
         /// <summary>
@@ -134,6 +157,8 @@ namespace RowVR.Stroke
             _strokeMax = Math.Max(_strokeMax, position);
 
             var span = _rangeMax - _rangeMin;
+            TrackPause(timeSeconds, velocity, position);
+
             if (!_hasRange || span < _settings.MinStrokeLengthMetres)
             {
                 // Not enough travel to be rowing. Stay Unknown rather than guessing.
@@ -141,10 +166,98 @@ namespace RowVR.Stroke
                 return CurrentState(position, velocity);
             }
 
+            if (_needTravel)
+            {
+                // Rebuilding after a pause. The decayed session range is still wide, so on its
+                // own it would let a small movement - hands coming up off the lap - normalize to
+                // most of a stroke. Require real travel since the pause first.
+                _sinceRestMin = Math.Min(_sinceRestMin, position);
+                _sinceRestMax = Math.Max(_sinceRestMax, position);
+                if (_sinceRestMax - _sinceRestMin < _settings.MinStrokeLengthMetres)
+                {
+                    return CurrentState(position, velocity);
+                }
+                _needTravel = false;
+            }
+
             var normalized = Clamp01((position - _rangeMin) / span);
+
+            if (_phase == StrokePhase.Unknown && _restWasAtCatch && velocity < -_settings.VelocityThreshold)
+            {
+                // The rower held still at full reach, then drove. That departure is a catch we
+                // did witness - it is how a stroke from rest begins - so count it, timed at the
+                // moment the handle left rest rather than at the moment we became sure.
+                _restWasAtCatch = false;
+                _extremumValue = _restPosition;
+                _extremumTime = _restEndTime;
+                OnCatch(timeSeconds);
+                return new StrokeState(_phase, position, velocity, normalized, _metrics);
+            }
+
+            if (_phase != StrokePhase.Unknown) _restWasAtCatch = false;
             AdvancePhase(timeSeconds, velocity, normalized);
 
             return new StrokeState(_phase, position, velocity, normalized, _metrics);
+        }
+
+        /// <summary>
+        /// Notices the rower stopping: the handle below the velocity threshold for
+        /// <see cref="StrokeDetectorSettings.PauseSeconds"/>. Handled once per pause.
+        /// </summary>
+        void TrackPause(double timeSeconds, float velocity, float position)
+        {
+            if (Math.Abs(velocity) < _settings.VelocityThreshold)
+            {
+                if (!_still)
+                {
+                    _still = true;
+                    _stillSince = timeSeconds;
+                }
+                _restEndTime = timeSeconds;
+
+                if (!_pauseHandled && timeSeconds - _stillSince >= _settings.PauseSeconds)
+                {
+                    _pauseHandled = true;
+                    OnPause(position);
+                }
+            }
+            else
+            {
+                _still = false;
+                _pauseHandled = false;
+            }
+        }
+
+        void OnPause(float position)
+        {
+            // Where in the rower's reach did they stop? At the catch, the next drive is a
+            // real stroke from rest. Anywhere else - a freeze mid-drive, hands in the lap -
+            // it is not. Judged against the last complete stroke, not the session range: the
+            // session range decays while resting, and a decayed range made hands in the lap
+            // look like full reach, so reaching for the headset was scored as a stroke.
+            // Before any stroke has been rowed, rest is treated as the catch, because that is
+            // how people start rowing.
+            if (_hasStrokeExtent)
+            {
+                var extent = _lastStrokeMax - _lastStrokeMin;
+                _restWasAtCatch = extent > 1e-3f &&
+                                  (position - _lastStrokeMin) / extent > _settings.CatchZone;
+            }
+            else
+            {
+                _restWasAtCatch = true;
+            }
+            _restPosition = position;
+
+            // Stop measuring rate across the pause. The next catch starts a new interval
+            // instead of producing one that includes the stop.
+            _lastCatchTime = double.NaN;
+            _lastFinishTime = double.NaN;
+
+            _phase = StrokePhase.Unknown;
+            _needTravel = true;
+            _sinceRestMin = position;
+            _sinceRestMax = position;
         }
 
         /// <summary>
@@ -299,6 +412,12 @@ namespace RowVR.Stroke
             }
 
             _lastCatchTime = catchTime;
+            if (_strokeMax - _strokeMin >= _settings.MinStrokeLengthMetres)
+            {
+                _hasStrokeExtent = true;
+                _lastStrokeMin = _strokeMin;
+                _lastStrokeMax = _strokeMax;
+            }
             // Range for the stroke that starts here.
             _strokeMin = float.MaxValue;
             _strokeMax = float.MinValue;

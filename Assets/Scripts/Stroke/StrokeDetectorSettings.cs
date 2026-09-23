@@ -48,6 +48,24 @@ namespace RowVR.Stroke
         public float MinStrokeLengthMetres = 0.25f;
 
         /// <summary>
+        /// Seconds the handle must stay below <see cref="VelocityThreshold"/> for the rower
+        /// to count as having stopped. A pause does three things: the stroke rate stops
+        /// measuring across it (a 3s freeze otherwise reads as ~11 spm), small movements
+        /// after it must build up a fresh <see cref="MinStrokeLengthMetres"/> of travel before
+        /// anything counts (hands coming up off the lap were being scored as a stroke), and a
+        /// drive away from a pause held at the catch position is counted as that stroke's
+        /// catch (the first stroke from rest was never counted).
+        ///
+        /// Swept against the real Quest 3 recordings in tests/RowVR.Stroke.Tests/fixtures:
+        /// every count comes out right for 1.5s to 3.0s. At 1.0s and below, hands coming up
+        /// off the lap after a rest are scored as a stroke again. At 4.0s, a ~3s freeze and
+        /// a ~3s rest before rowing are too short to register, so the first stroke from rest
+        /// is lost and the rate after a freeze reads ~11 spm. 2s sits mid-band. Re-sweep if
+        /// you change it - the band is set by those recordings, not by theory.
+        /// </summary>
+        public float PauseSeconds = 2.0f;
+
+        /// <summary>
         /// Half-life in seconds for the observed range (min/max handle position). The range
         /// has to decay or one freak reach would raise the ceiling for the rest of the
         /// session; decaying too fast makes the normalization drift mid-piece.

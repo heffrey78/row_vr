@@ -123,11 +123,11 @@ namespace RowVR.Stroke.Tests
         }
 
         [Test]
-        [Ignore("Known detector weakness, a tuning target: the rate after a pause includes the pause. " +
-                "The first stroke after the ~3s freeze reads ~10.9 spm against ~27 either side. " +
-                "Remove this attribute once the detector treats a long gap as a break.")]
         public void RateAfterAPauseIgnoresThePause()
         {
+            // The interval across the freeze is not measured, so the first stroke after it
+            // carries the rate from before the pause (~27) instead of one that includes the
+            // stop (~11).
             var first = In(FreezeEnd, StopEnd).First();
             Assert.That(first.Metrics.StrokesPerMinute, Is.GreaterThan(18f), Describe(In(StopStart, StopEnd)));
         }
