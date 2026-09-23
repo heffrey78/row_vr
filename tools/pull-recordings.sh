@@ -16,7 +16,8 @@ mkdir -p "$local_dir"
 
 if ! adb -s "$serial" shell "test -d '$remote'" 2>/dev/null; then
   die "No recordings directory on the headset ($remote).
-     Record a clip first: launch the app and use the HandRecorder control in-scene."
+     Record a clip first: with the app running on the headset,
+       make record NAME=steady-22spm   then row, then   make record-stop"
 fi
 
 count="$(adb -s "$serial" shell "ls -1 '$remote' 2>/dev/null | wc -l" | tr -d '\r')"

@@ -30,6 +30,13 @@ namespace RowVR.Rowing
         [Tooltip("Where the world-space panel sits relative to the head, in metres.")]
         [SerializeField] Vector3 worldPanelOffset = new Vector3(0f, -0.2f, 1.5f);
 
+        /// <summary>
+        /// Set by a recorder on the same object while a take is running, and shown on the
+        /// panel. A string rather than a reference so this assembly does not have to know
+        /// the recording assembly exists.
+        /// </summary>
+        public string RecordingStatus { get; set; }
+
         RowingRig _rig;
         StrokeState _state;
         int _strokes;
@@ -115,7 +122,8 @@ namespace RowVR.Rowing
                 $"rate     {_state.Metrics.StrokesPerMinute:F1} spm\n" +
                 $"handle   {_state.HandlePosition:F2} m\n" +
                 $"hands    {tracking}\n" +
-                $"why      {why}";
+                $"why      {why}" +
+                (string.IsNullOrEmpty(RecordingStatus) ? string.Empty : $"\n{RecordingStatus}");
         }
 
         void OnCatch(StrokeMetrics metrics)
