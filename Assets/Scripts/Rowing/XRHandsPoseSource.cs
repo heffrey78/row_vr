@@ -21,6 +21,15 @@ namespace RowVR.Rowing
         readonly Transform _head;
         XRHandSubsystem _subsystem;
 
+        // Diagnostics for the "subsystem running, hands never tracked" case. The subsystem
+        // is pumped from the PlayerLoop, and what each pump returns separates two very
+        // different failures: no updates at all means the Unity-side update is not running;
+        // updates arriving with no success flags means the runtime is declining to locate
+        // hands for this app.
+        XRHandSubsystem _subscribed;
+        int _updates;
+        XRHandSubsystem.UpdateSuccessFlags _lastFlags;
+
         /// <param name="trackingOrigin">
         /// The XR Origin's transform. XR Hands reports joint poses in tracking space, so
         /// they must be taken through this to reach world space. If the rig is ever moved,
@@ -36,6 +45,16 @@ namespace RowVR.Rowing
 
         public bool IsTracking { get; private set; }
 
+        /// <summary>
+        /// Why there is no pose, in a few words.
+        ///
+        /// "No hands" collapses five unrelated failures into one symptom - no subsystem
+        /// registered, one registered but not running, a hand not tracked, a palm joint with
+        /// no pose - and on device each guess costs putting the headset back on. Naming the
+        /// failure turns that into one look at the readout.
+        /// </summary>
+        public string Status { get; private set; } = "starting";
+
         public bool TryGetPose(double timeSeconds, out HandSample sample)
         {
             sample = default;
@@ -43,23 +62,39 @@ namespace RowVR.Rowing
             if (_subsystem == null || !_subsystem.running)
             {
                 _subsystem = FindRunningSubsystem();
+                Subscribe(_subsystem);
                 if (_subsystem == null)
                 {
+                    SubsystemManager.GetSubsystems(Subsystems);
+                    Status = Subsystems.Count == 0
+                        ? "no hand subsystem registered"
+                        : $"{Subsystems.Count} hand subsystem(s), none running";
                     IsTracking = false;
                     return false;
                 }
             }
 
-            if (!TryGetPalm(_subsystem.leftHand, out var left) ||
-                !TryGetPalm(_subsystem.rightHand, out var right))
+            // Cleared each frame so a palm-specific reason from an earlier frame cannot
+            // outlive the condition that produced it.
+            Status = string.Empty;
+            var leftOk = TryGetPalm(_subsystem.leftHand, out var left);
+            var rightOk = TryGetPalm(_subsystem.rightHand, out var right);
+            if (!leftOk || !rightOk)
             {
                 // Hands out of view or tracking dropped. Report no pose rather than a stale
                 // one: the detector holds its state, where a repeated sample would read as
                 // the handle having stopped dead.
+                var which = !leftOk && !rightOk ? "both hands untracked"
+                          : !leftOk ? "left hand untracked"
+                          : "right hand untracked";
+                // Keep the palm-specific reason if TryGetPalm set one.
+                if (!Status.StartsWith("tracked, but", System.StringComparison.Ordinal))
+                    Status = $"{which} ({SubsystemId}, updates {_updates}, flags {_lastFlags})";
                 IsTracking = false;
                 return false;
             }
 
+            Status = "ok";
             IsTracking = true;
             sample = new HandSample(
                 timeSeconds,
@@ -76,7 +111,14 @@ namespace RowVR.Rowing
             if (!hand.isTracked) return false;
 
             var joint = hand.GetJoint(XRHandJointID.Palm);
-            if (!joint.TryGetPose(out var pose)) return false;
+            if (!joint.TryGetPose(out var pose))
+            {
+                // Distinct from "not tracked": the hand is being tracked but this particular
+                // joint has no pose, which would point at the joint choice rather than at
+                // tracking. Worth telling apart before blaming the runtime.
+                Status = "tracked, but palm joint has no pose";
+                return false;
+            }
 
             worldPosition = _trackingOrigin != null
                 ? _trackingOrigin.TransformPoint(pose.position)
@@ -84,14 +126,48 @@ namespace RowVR.Rowing
             return true;
         }
 
+        void Subscribe(XRHandSubsystem subsystem)
+        {
+            if (subsystem == _subscribed) return;
+            if (_subscribed != null) _subscribed.updatedHands -= OnUpdatedHands;
+            _subscribed = subsystem;
+            if (_subscribed != null) _subscribed.updatedHands += OnUpdatedHands;
+        }
+
+        void OnUpdatedHands(XRHandSubsystem subsystem,
+                            XRHandSubsystem.UpdateSuccessFlags flags,
+                            XRHandSubsystem.UpdateType type)
+        {
+            _updates++;
+            _lastFlags = flags;
+        }
+
+        /// <summary>
+        /// Prefers a real hand subsystem over a simulated one. The XR Interaction Simulator
+        /// registers its own XRHandSubsystem, and if one ever runs on device alongside the
+        /// OpenXR one, "first running" is a coin toss that silently picks hands that are
+        /// never tracked. Simulated subsystems are only used when nothing else is running,
+        /// which is exactly the Play Mode case they exist for.
+        /// </summary>
         static XRHandSubsystem FindRunningSubsystem()
         {
             SubsystemManager.GetSubsystems(Subsystems);
+            XRHandSubsystem simulated = null;
             foreach (var s in Subsystems)
             {
-                if (s.running) return s;
+                if (!s.running) continue;
+                if (IsSimulated(s)) { simulated ??= s; continue; }
+                return s;
             }
-            return null;
+            return simulated;
         }
+
+        static bool IsSimulated(XRHandSubsystem subsystem)
+        {
+            var id = subsystem.subsystemDescriptor?.id ?? string.Empty;
+            return id.IndexOf("simulat", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public string SubsystemId => _subsystem?.subsystemDescriptor?.id ?? "none";
     }
 }

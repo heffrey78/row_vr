@@ -46,6 +46,9 @@ namespace RowVR.Rowing
         public HandSample LastSample { get; private set; }
         public bool IsTracking => _source is XRHandsPoseSource live && live.IsTracking;
 
+        /// <summary>Why the live source has no pose, for on-device diagnosis.</summary>
+        public string SourceStatus => _source is XRHandsPoseSource live ? live.Status : "no live source";
+
         StrokeDetector _detector;
         IHandPoseSource _source;
 
