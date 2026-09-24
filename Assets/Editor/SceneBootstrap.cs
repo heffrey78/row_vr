@@ -260,15 +260,18 @@ namespace RowVR.Editor
         /// question being asked on device.
         /// </summary>
         /// <summary>
-        /// A URP Lit material saved as an asset, so it is included in the build. A material
-        /// created at runtime with Shader.Find would risk its shader being stripped.
+        /// A lit material for whichever render pipeline is actually active, saved as an asset
+        /// so the build includes it. The first version assumed URP because the URP package is
+        /// installed - but no URP pipeline asset is assigned, so the project renders with the
+        /// built-in pipeline, and a URP shader there draws solid magenta.
         /// </summary>
         static Material CreateMaterial(string name, Color color)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var urp = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline != null;
+            var shader = Shader.Find(urp ? "Universal Render Pipeline/Lit" : "Standard");
             if (shader == null)
             {
-                Debug.LogWarning($"[RowVR] URP Lit shader not found; '{name}' keeps the default material.");
+                Debug.LogWarning($"[RowVR] No lit shader found for the active pipeline; '{name}' keeps the default material.");
                 return null;
             }
 
@@ -282,6 +285,10 @@ namespace RowVR.Editor
                 material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
             }
+            material.shader = shader;
+            // Built-in Standard calls it _Color, URP Lit _BaseColor. Set both, so the material
+            // stays correct if the project moves to URP later.
+            material.SetColor("_Color", color);
             material.SetColor("_BaseColor", color);
             EditorUtility.SetDirty(material);
             return material;

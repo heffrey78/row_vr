@@ -43,6 +43,15 @@ namespace RowVR.Recording
 
         const float TriggerPollSeconds = 0.25f;
 
+        /// <summary>
+        /// A take shorter than this when the app pauses is treated as the headset being put
+        /// on, not a finished take. Putting a Quest on makes the proximity sensor flicker:
+        /// the app paused and resumed three times in two seconds, and the second flicker came
+        /// after 16 samples, so a 0.2s "take" was saved and the real one never started. Every
+        /// real take opens with a ~3s still hold, so this cannot discard one.
+        /// </summary>
+        const float MinTakeSeconds = 3f;
+
         public bool IsRecording { get; private set; }
         public int SampleCount => _clip?.Samples.Count ?? 0;
         public float ElapsedSeconds => IsRecording ? (float)(Time.timeAsDouble - _startTime) : 0f;
@@ -190,18 +199,18 @@ namespace RowVR.Recording
         {
             if (!paused || !IsRecording) return;
 
-            if (SampleCount == 0)
+            if (_clip == null || _clip.DurationSeconds < MinTakeSeconds)
             {
-                // Nothing captured yet: the take was armed while the headset sat awake on the
-                // desk, and it paused before anyone put it on. That is not the end of a take,
-                // it is the normal way one begins - so abandon it quietly and let the trigger,
-                // still present, start it again the moment the headset is back on. Holding
-                // here (as the first version did) meant the rower rowed a whole set into a
+                // Too short to be a take: armed while the headset sat awake on the desk, or the
+                // proximity sensor flickering as it goes on. That is how a take begins, not how
+                // it ends - so abandon it and let the trigger, still present, start it again
+                // when the app resumes. Holding here meant the rower rowed a whole set into a
                 // recorder that had already given up.
                 IsRecording = false;
                 _startedRemotely = false;
                 _clip = null;
-                Debug.Log("[RowVR] App paused before any samples - take will start when the headset is back on.");
+                Debug.Log($"[RowVR] App paused {SampleCount} samples into a take - treating it as the headset going on; " +
+                          "the take will start again when the app resumes.");
                 return;
             }
 
