@@ -24,10 +24,12 @@ last_line() {
   { adb -s "$serial" logcat -d -s Unity 2>/dev/null | grep -F "$1" | tail -1 | tr -d '\r'; } || true
 }
 
-# Waits up to ~6s for a line matching $1 that differs from $2 (the line before we acted).
+# Waits up to ~20s for a line matching $1 that differs from $2 (the line before we acted).
+# Generous because the app only runs while the headset is on: a trigger written while it is
+# paused is picked up the moment it resumes, which can be several seconds later.
 await_line() {
   local pattern="$1" before="$2" now i
-  for i in $(seq 1 24); do
+  for i in $(seq 1 80); do
     now="$(last_line "$pattern")"
     if [[ -n "$now" && "$now" != "$before" ]]; then
       printf '%s\n' "$now"
@@ -60,8 +62,9 @@ case "$action" in
       dim "  ${line#*\[RowVR\] }"
       dim "  Row, then: make record-stop"
     else
-      warn "Trigger written, but the app did not confirm within 6s.
-     Is the app in focus with the headset on? The recorder only polls while the app runs."
+      warn "Trigger written, but the app did not confirm within 20s.
+     The app only runs while the headset is on. It will start recording as soon as it
+     resumes - check the panel for the REC line - so this may not be a failure."
       exit 1
     fi
     ;;
@@ -78,14 +81,16 @@ case "$action" in
       fail "Take ended with no samples - the hands were never tracked while recording."
       exit 1
     elif { adb -s "$serial" logcat -d -s Unity 2>/dev/null \
-             | grep -E '\[RowVR\] (Recording started|Reached the .* limit)' | tail -1 \
-             | grep -q 'limit'; } 2>/dev/null; then
-      # The take hit the recorder's duration cap and was already written; removing the
-      # trigger just re-arms the next 'make record'.
-      ok "The take had already stopped at the duration cap and been written:"
+             | grep -E '\[RowVR\] (Recording started|Reached the .* limit|App paused)' | tail -1 \
+             | grep -qE 'limit|App paused'; } 2>/dev/null; then
+      # The take already ended - at the duration cap, or when the headset came off and the
+      # app paused, which is the normal way a take ends now. It was written then; removing
+      # the trigger just re-arms the next 'make record'.
+      ok "The take had already ended and been saved:"
       dim "  ${before#*\[RowVR\] }"
     else
-      warn "Trigger removed, but the app did not confirm a clip within 6s. Check 'make logs'."
+      warn "Trigger removed, but the app did not confirm a clip within 20s.
+     If the headset is off, the app is paused and will write the clip when it resumes."
       exit 1
     fi
     ;;

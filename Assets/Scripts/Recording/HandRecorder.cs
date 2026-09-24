@@ -58,11 +58,12 @@ namespace RowVR.Recording
         bool _startedRemotely;
         float _nextTriggerPoll;
 
-        // Set when a remotely started take hits the duration cap. The trigger file is still
+        // Set when a remotely started take ends for a reason other than the trigger being
+        // removed - the duration cap, or the headset coming off. The trigger file is still
         // present at that point, and without this the next poll would silently start a new
         // take - which is how one session of four sets became one 2-minute clip plus a
         // 2-second fragment, with no boundary between the sets.
-        bool _cappedWhileTriggered;
+        bool _heldUntilTriggerCleared;
 
         void Awake()
         {
@@ -113,9 +114,9 @@ namespace RowVR.Recording
             try { present = File.Exists(trigger); }
             catch (IOException) { return; }
 
-            if (!present) _cappedWhileTriggered = false;
+            if (!present) _heldUntilTriggerCleared = false;
 
-            if (present && !IsRecording && !_cappedWhileTriggered)
+            if (present && !IsRecording && !_heldUntilTriggerCleared)
             {
                 string takeNote = null;
                 try { takeNote = File.ReadAllText(trigger); }
@@ -176,6 +177,20 @@ namespace RowVR.Recording
             if (_rig != null) _rig.Tick += OnTick;
         }
 
+        /// <summary>
+        /// Save the take the moment the app is paused - on Quest, that is the headset coming
+        /// off. A paused app runs no Update, so it cannot see the trigger being removed, and
+        /// the samples would sit in memory until it resumed. If the system reclaimed the
+        /// paused app first, the take was lost. Taking the headset off ends the take.
+        /// </summary>
+        void OnApplicationPause(bool paused)
+        {
+            if (!paused || !IsRecording) return;
+            Debug.Log("[RowVR] App paused (headset off?) - saving the take now.");
+            _heldUntilTriggerCleared = _startedRemotely;
+            StopRecording();
+        }
+
         void OnDisable()
         {
             if (_rig != null) _rig.Tick -= OnTick;
@@ -192,7 +207,7 @@ namespace RowVR.Recording
             {
                 Debug.Log($"[RowVR] Reached the {maxDurationSeconds:F0}s limit; stopping. " +
                           "Run 'make record-stop' then 'make record' for the next take.");
-                _cappedWhileTriggered = _startedRemotely;
+                _heldUntilTriggerCleared = _startedRemotely;
                 StopRecording();
                 return;
             }
