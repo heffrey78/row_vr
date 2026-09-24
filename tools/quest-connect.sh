@@ -14,15 +14,39 @@ cache="$STATE_DIR/device-ip"
 # 1. An explicit address always wins.
 ip="${IP:-}"
 
+# adb connect with a timeout. Without one, a connection the local adb server still holds
+# from before the cable was pulled makes `adb connect` hang indefinitely - the headset's
+# port is open, the handshake just never finishes. Restarting the local server clears it,
+# so do that once before giving up.
+try_connect() {
+  local target="$1" attempt
+  for attempt in 1 2; do
+    adb disconnect "$target" >/dev/null 2>&1 || true
+    if timeout 10 adb connect "$target" 2>&1 | grep -qE '^(already )?connected to'; then
+      # "connected" is not enough: a stale transport can report connected but stay offline.
+      if timeout 5 adb -s "$target" get-state 2>/dev/null | grep -q '^device$'; then
+        return 0
+      fi
+    fi
+    if (( attempt == 1 )); then
+      warn "No usable connection to $target; restarting the local adb server and retrying."
+      adb kill-server >/dev/null 2>&1 || true
+      adb start-server >/dev/null 2>&1 || true
+    fi
+  done
+  return 1
+}
+
 # 2. Otherwise try the cached one — the common case on the second run onward.
 if [[ -z "$ip" && -f "$cache" ]]; then
   ip="$(cat "$cache")"
   info "Trying cached address $ip"
-  if adb connect "$ip:$PORT" 2>&1 | grep -qE 'connected to'; then
+  if try_connect "$ip:$PORT"; then
     ok "Connected to $ip:$PORT"
     exit 0
   fi
-  warn "Cached address did not answer; falling back to USB discovery."
+  warn "Cached address did not answer. If the headset is asleep, put it on to wake it and
+     re-run. Otherwise falling back to USB discovery."
   ip=""
 fi
 
@@ -50,7 +74,7 @@ if [[ -z "$ip" ]]; then
   sleep 2
 fi
 
-if adb connect "$ip:$PORT" 2>&1 | grep -qE 'connected to'; then
+if try_connect "$ip:$PORT"; then
   printf '%s\n' "$ip" > "$cache"
   ok "Connected to $ip:$PORT (cached for next time)"
   dim "You can unplug the cable now. 'adb disconnect' to drop it."
