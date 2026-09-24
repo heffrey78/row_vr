@@ -101,8 +101,11 @@ namespace RowVR.Recording
         {
             if (_readout != null)
             {
-                _readout.RecordingStatus = IsRecording
-                    ? $"REC {ElapsedSeconds:F0}s  {SampleCount} samples  {_takeNote}"
+                // Coloured and shown first: in the headset this is the only way to know a take
+                // is running, and a plain line at the bottom of the panel went unnoticed.
+                _readout.RecordingStatus =
+                    IsRecording ? $"<color=#ff5050>REC  {ElapsedSeconds:F0}s  {SampleCount} samples  {_takeNote}</color>"
+                    : _heldUntilTriggerCleared ? "<color=#ffd040>take saved - waiting for the next one</color>"
                     : null;
             }
 
@@ -186,6 +189,22 @@ namespace RowVR.Recording
         void OnApplicationPause(bool paused)
         {
             if (!paused || !IsRecording) return;
+
+            if (SampleCount == 0)
+            {
+                // Nothing captured yet: the take was armed while the headset sat awake on the
+                // desk, and it paused before anyone put it on. That is not the end of a take,
+                // it is the normal way one begins - so abandon it quietly and let the trigger,
+                // still present, start it again the moment the headset is back on. Holding
+                // here (as the first version did) meant the rower rowed a whole set into a
+                // recorder that had already given up.
+                IsRecording = false;
+                _startedRemotely = false;
+                _clip = null;
+                Debug.Log("[RowVR] App paused before any samples - take will start when the headset is back on.");
+                return;
+            }
+
             Debug.Log("[RowVR] App paused (headset off?) - saving the take now.");
             _heldUntilTriggerCleared = _startedRemotely;
             StopRecording();

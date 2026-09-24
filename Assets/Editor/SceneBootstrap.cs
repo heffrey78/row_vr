@@ -195,6 +195,12 @@ namespace RowVR.Editor
             floor.name = "Floor";
             floor.transform.localScale = new Vector3(2f, 1f, 2f);
 
+            // Dark, not the default near-white: the readout is white text that follows the
+            // rower's gaze, and looking down at the handle put it against a white floor
+            // where it could not be read.
+            var floorMaterial = CreateMaterial("Floor", new Color(0.18f, 0.19f, 0.21f));
+            if (floorMaterial != null) floor.GetComponent<Renderer>().sharedMaterial = floorMaterial;
+
             // Straight ahead at seated eye height, so "am I facing the right way" is obvious.
             var marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
             marker.name = "Forward Marker";
@@ -253,6 +259,34 @@ namespace RowVR.Editor
         /// render under URP, the joint spheres still prove tracking is alive, which is the
         /// question being asked on device.
         /// </summary>
+        /// <summary>
+        /// A URP Lit material saved as an asset, so it is included in the build. A material
+        /// created at runtime with Shader.Find would risk its shader being stripped.
+        /// </summary>
+        static Material CreateMaterial(string name, Color color)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+            {
+                Debug.LogWarning($"[RowVR] URP Lit shader not found; '{name}' keeps the default material.");
+                return null;
+            }
+
+            const string directory = "Assets/Materials";
+            if (!AssetDatabase.IsValidFolder(directory)) AssetDatabase.CreateFolder("Assets", "Materials");
+
+            var path = $"{directory}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.SetColor("_BaseColor", color);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         static void AddHandVisualizerIfImported(Transform trackingOrigin)
         {
             var scriptGuid = AssetDatabase.FindAssets("HandVisualizer t:MonoScript")

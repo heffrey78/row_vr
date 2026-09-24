@@ -83,6 +83,7 @@ namespace RowVR.Rowing
             _worldText.anchor = TextAnchor.MiddleCenter;
             _worldText.alignment = TextAlignment.Left;
             _worldText.color = Color.white;
+            _worldText.richText = true;   // RecordingStatus uses <color> to stand out.
 
             var renderer = panel.GetComponent<MeshRenderer>();
             if (renderer != null && _worldText.font != null)
@@ -117,13 +118,13 @@ namespace RowVR.Rowing
                 if (logToConsole) Debug.Log($"[RowVR] hand source: {why}");
             }
             _worldText.text =
+                (string.IsNullOrEmpty(RecordingStatus) ? string.Empty : RecordingStatus + "\n") +
                 $"phase    {_state.Phase}\n" +
                 $"strokes  {_strokes}\n" +
                 $"rate     {_state.Metrics.StrokesPerMinute:F1} spm\n" +
                 $"handle   {_state.HandlePosition:F2} m\n" +
                 $"hands    {tracking}\n" +
-                $"why      {why}" +
-                (string.IsNullOrEmpty(RecordingStatus) ? string.Empty : $"\n{RecordingStatus}");
+                $"why      {why}";
         }
 
         void OnCatch(StrokeMetrics metrics)
