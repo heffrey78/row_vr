@@ -11,6 +11,14 @@ namespace RowVR.Stroke.Tests
     /// 2026-09-23 on a Quest 3 (firmware UP1A.231005.007.A1). Each take starts and ends at
     /// rest, so there is no cold-start artefact from slicing.
     ///
+    /// STANDING, ARMS ONLY - not rowing-machine data. The rower stood and rowed with their
+    /// arms: ~0.4-0.5m of handle travel, head roughly still, open hands, ~28 spm, drive and
+    /// recovery roughly 1:1. The app's primary use is a rowing machine (REQ-0001-FUNC), where
+    /// the stroke is a full leg-back-arm movement with the head sliding with the seat and the
+    /// hands gripping a handle. These fixtures remain valid as regression tests of the
+    /// detector's logic against real Quest 3 tracking noise; they are not evidence that it is
+    /// tuned for machine rowing.
+    ///
     /// Before the detector understood pauses, it counted 11 of 12 in both takes (the first
     /// stroke from rest was lost) and scored hands coming up off the lap after the sloppy
     /// take as a stroke - so the sloppy take's "12" was 11 real strokes plus a phantom.
