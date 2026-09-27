@@ -3,7 +3,7 @@
 # only, so on Linux scrcpy is how you see what the wearer sees.
 #
 #   make cast
-#   QUEST_CROP=1600:900:2017:510 make cast     # crop to one eye
+#   QUEST_CROP=1600:1200:232:504 make cast     # left eye on a Quest 3 (4128x2208)
 #
 # The headset renders both eyes side by side with heavy lens distortion, so an
 # uncropped mirror looks wrong. Crop to one eye for anything you intend to watch for

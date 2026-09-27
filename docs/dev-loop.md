@@ -182,9 +182,12 @@ with `trackingOrigin` unset reports a handle parked at the world origin, forever
 error anywhere. That is the single most confusing failure this project has.
 
 `make bootstrap` applies the Quest configuration from `Assets/Editor/ProjectBootstrap.cs`
-(IL2CPP, ARM64, Vulkan, Linear, targetSdk 34, text serialization, 4x MSAA). It prints a
-short list of things it cannot set reliably from code — mostly XR Plug-in Management
-checkboxes — with the exact UI path for each. Do those once.
+(IL2CPP, ARM64, Vulkan, Linear, targetSdk 34, text serialization, 4x MSAA). It also sets up
+XR Plug-in Management through `Assets/Editor/XRBootstrap.cs`: it assigns the OpenXR loader
+for Android and turns on the hand tracking features and interaction profiles. It ends with
+a report of every setting next to the value it should have. There are no manual steps.
+Nothing else makes a missing XR loader obvious: without one, the APK builds and runs as a
+flat 2D Android app, with no error.
 
 > Settings live in code rather than in checked-in `ProjectSettings/*.asset` YAML on purpose:
 > those files are large, version-specific, merge badly, and a malformed one stops the Editor
@@ -292,6 +295,12 @@ make disconnect
 
 The connection drops when the headset sleeps. Re-run `make connect`.
 
+This includes during a `make dev` build. The headset sleeps soon after you take it off,
+and a build takes minutes. On 2026-09-27 the Wi-Fi connection dropped while the build ran,
+and deploy then failed with "No Quest detected". The APK was fine: `make connect` followed
+by `make deploy` installed it. To avoid that, keep the headset on, or run `make build`
+first and `make connect && make deploy` once it finishes.
+
 ---
 
 ## 4. Casting
@@ -301,16 +310,19 @@ make cast
 ```
 
 The headset renders both eyes side by side with heavy lens distortion, so an uncropped
-mirror looks wrong. Run it once uncropped, read the source resolution scrcpy prints, then
-crop to roughly the left half:
+mirror looks wrong. `QUEST_CROP` is `width:height:x:y`: the size of the box to keep, then
+its top-left corner in the full image. `adb shell wm size` gives the full size.
+
+On a Quest 3 that is 4128x2208, so each eye is 2064x2208. This keeps a 1600x1200 box
+centred in the left eye, and gives a clear view *(verified 2026-09-27)*:
 
 ```sh
-QUEST_CROP=1600:900:0:0 make cast
+QUEST_CROP=1600:1200:232:504 make cast
 MAX_SIZE=1024 make cast        # if the stream is choppy over Wi-Fi
 ```
 
-Put the value in `tools/local.env` once you have one that suits your headset's current
-render resolution.
+Put the value in `tools/local.env` so plain `make cast` uses it. Over home Wi-Fi the
+stream was smooth without `MAX_SIZE`.
 
 ---
 
@@ -392,27 +404,44 @@ deliberately, in its own commit.
 ## 7. Verification checklist
 
 This file was originally written in a container with no Unity, no Android SDK and no
-headset, so none of it had been run. That is progressively being fixed. What is ticked
-below has been executed on real hardware and is dated; what is not ticked has still never
-run, and is not a claim.
+headset, so none of it had been run. Each ticked item below has been run on the hardware
+named here, with the date. An unticked item has never been run, and the docs make no
+claim about it.
 
-**Host:** CachyOS, kernel 7.2.6. **Headset:** Quest 3.
+**Host:** CachyOS, kernel 7.2.6, Unity 6000.6.2f1. **Headset:** Quest 3, Android 14 /
+API 34, build UP1A.231005.007.A1.
 
-- [x] `make preflight` — host tools green *(2026-09-22)*. adb 1.0.41, scrcpy 4.1,
+- [x] `make preflight` — exits 0 with the headset connected over wireless adb and the app
+      installed *(2026-09-27)*. First run *(2026-09-22)*: adb 1.0.41, scrcpy 4.1,
       dotnet SDK 8.0.131, udev rules from `android-udev` at
-      `/usr/lib/udev/rules.d/51-android.rules`, account in `adbusers`. Unity and the
-      device are still outstanding, so it exits non-zero overall.
-- [ ] Unity opens the project without errors
-- [ ] `make bootstrap` — settings applied; do the manual XR steps it lists
-- [ ] `make cast` — you can see the headset view
-- [ ] `make dev` — builds, installs, launches, logs stream. **Note the wall-clock time**; it
-      sets your expectations for tier 3 forever
-- [ ] Play Mode with the XR Interaction Simulator — simulated hands drive the scene
-- [x] `make test` — 30 tests pass *(2026-09-22)*. **2.65s warm**, 8.1s cold including
-      .NET first-run setup; test execution itself is ~120ms and the rest is MSBuild.
-      Compiled clean on first contact with a compiler, with Unity not installed on the
-      machine at all — which is the engine-free claim proved rather than asserted.
-- [ ] Record a stroke → `make pull-recordings` → `make promote` → `make test` against it
+      `/usr/lib/udev/rules.d/51-android.rules`, account in `adbusers`.
+- [x] Unity opens the project without errors *(2026-09-22)*. No package-resolution or
+      compile errors in `Logs/Editor.log`, and no version-upgrade prompt. Getting there
+      took moving the package pins to versions that support 6000.6 (`9b7a351`).
+- [x] `make bootstrap` — every setting reports as wanted *(2026-09-27)*. XR Plug-in
+      Management is set from code too (`XRBootstrap`): OpenXR loader for Android, init on
+      start, hand tracking features and interaction profiles. No manual steps remain.
+- [x] `make cast` — a clear single-eye view over wireless adb, smooth without `MAX_SIZE`
+      *(2026-09-27)*. See section 4 for the crop.
+- [x] `make dev` — builds, installs, launches, logs stream *(2026-09-23)*. The app runs as
+      an immersive OpenXR app, and logcat shows real Quest hand tracking reaching the
+      detector (`hand source: ok`, `catch #9 54.7 spm`). Wall-clock times are in the
+      tier 3 table: 13:16 cold, ~1:00 warm.
+- [ ] `make dev` over wireless adb, uninterrupted, no cable. *(2026-09-27)*: the build
+      (136 s) and the install and launch each worked over Wi-Fi, but the connection
+      dropped during the build, so the install needed a `make connect` first. See
+      section 3.
+- [ ] Play Mode with the XR Interaction Simulator — simulated hands drive the scene. The
+      scene and the simulator sample are in place (`a483034`), and the scene was built
+      headlessly, which proves its scripts compile. Nobody has pressed Play yet.
+- [x] `make test` — 53 tests pass *(2026-09-27)*, **~2.8s warm** wall clock, with test
+      execution itself ~260ms. First run *(2026-09-22)*: 30 tests, 2.65s warm, 8.1s cold
+      including .NET first-run setup. That first run compiled clean with Unity not
+      installed on the machine at all, which proves the engine-free claim.
+- [x] Record a stroke → `make pull-recordings` → `make promote` → `make test` against it
+      *(2026-09-23, 2026-09-27)*. Seven real Quest 3 fixtures are committed: three
+      standing arms-only takes and four from a rowing machine, each with a stroke count
+      the rower made by hand.
 
 ---
 

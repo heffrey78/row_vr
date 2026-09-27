@@ -3,7 +3,11 @@
 A rowing app for Meta Quest 3, driven by **hand tracking** (no controllers).
 Unity 6, OpenXR, developed on **Linux**.
 
-Status: **dev loop scaffolding.** No gameplay yet.
+Status: **stroke detection runs on a Quest 3** from real hand tracking, and is tested
+against recordings from a rowing machine. The Linux dev loop is verified on hardware,
+apart from tier 2 (Play Mode with simulated hands), which hasn't been run yet. No
+gameplay yet. See [`docs/dev-loop.md` §7](docs/dev-loop.md#7-verification-checklist) for
+what has been verified.
 
 ## Why this repo looks the way it does
 
