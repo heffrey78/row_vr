@@ -232,6 +232,18 @@ not run on Linux.
 For scene wiring, UI, audio, feedback and boat feel. Good enough to iterate on how the thing
 *reads*; not good enough to judge real tracking.
 
+The simulator starts in **controller mode**, and until you switch it the readout shows
+"both hands untracked" from a subsystem called `Hand-Capture-Playback`. That subsystem is
+how the simulator delivers hands in XR Hands 1.8+. To switch, press `[` and `]` together
+once to select both hands, then again to change to hand mode.
+
+**Replaying a recording is usually the better tier 2.** Keyboard-driven hands are too
+jerky to look like a stroke. `ClipPlayback`, on the Rowing Rig, replays a `.rowclip` from
+`tests/RowVR.Stroke.Tests/fixtures/` in real time, as if it were live tracking. It starts
+again at the end of the clip, and each pass resets the detector and the readout's count.
+Set **Clip Path** to choose a take, or untick the component to use the simulator. It only
+runs in the Editor and turns itself off in a headset build.
+
 Play Mode is configured to skip domain and scene reload, which is most of the speed. The
 cost: statics are not reset between runs, so anything static needs
 `[RuntimeInitializeOnLoadMethod]` to reset itself.
@@ -431,9 +443,13 @@ API 34, build UP1A.231005.007.A1.
       (136 s) and the install and launch each worked over Wi-Fi, but the connection
       dropped during the build, so the install needed a `make connect` first. See
       section 3.
-- [ ] Play Mode with the XR Interaction Simulator — simulated hands drive the scene. The
-      scene and the simulator sample are in place (`a483034`), and the scene was built
-      headlessly, which proves its scripts compile. Nobody has pressed Play yet.
+- [x] Play Mode replaying a recorded take drives the detector *(2026-09-27)*. With
+      `ClipPlayback` on the steady rowing-machine take: 13 catches, 1 withdrawn, 12 net,
+      matching the rower's count, and every pass identical. Play Mode starts quickly.
+- [x] Play Mode with the XR Interaction Simulator's hands *(2026-09-27)*. In hand mode
+      the readout reports the simulated hands as tracking. In the default controller mode
+      it shows "both hands untracked", as expected. Keyboard motion was not checked for
+      strokes; recordings cover that.
 - [x] `make test` — 53 tests pass *(2026-09-27)*, **~2.8s warm** wall clock, with test
       execution itself ~260ms. First run *(2026-09-22)*: 30 tests, 2.65s warm, 8.1s cold
       including .NET first-run setup. That first run compiled clean with Unity not

@@ -52,21 +52,32 @@ namespace RowVR.Rowing
         /// second time and getting a slightly different answer.
         /// </summary>
         public HandSample LastSample { get; private set; }
-        public bool IsTracking => _source is XRHandsPoseSource live && live.IsTracking;
+        public bool IsTracking => _source is XRHandsPoseSource live ? live.IsTracking : _hasPose;
 
-        /// <summary>Why the live source has no pose, for on-device diagnosis.</summary>
-        public string SourceStatus => _source is XRHandsPoseSource live ? live.Status : "no live source";
+        /// <summary>
+        /// Why the source has no pose, for on-device diagnosis. Live tracking explains
+        /// itself; any other source reports the label it was given in <see cref="SetSource"/>.
+        /// </summary>
+        public string SourceStatus =>
+            _source is XRHandsPoseSource live ? live.Status
+            : _source == null ? "no source"
+            : _hasPose ? _sourceLabel
+            : _sourceLabel + ", no pose";
 
         StrokeDetector _detector;
         IHandPoseSource _source;
+        string _sourceLabel;
+        bool _hasPose;
 
         /// <summary>
         /// Swaps the pose source at runtime. Used by the recorder's playback mode and by
         /// Editor tooling; the game itself normally leaves the live source in place.
         /// </summary>
-        public void SetSource(IHandPoseSource source)
+        public void SetSource(IHandPoseSource source, string label = null)
         {
             _source = source;
+            _sourceLabel = label ?? "custom source";
+            _hasPose = false;
             _detector?.Reset();
         }
 
@@ -87,7 +98,12 @@ namespace RowVR.Rowing
 
         void Update()
         {
-            if (_source == null || !_source.TryGetPose(Time.timeAsDouble, out var sample)) return;
+            if (_source == null || !_source.TryGetPose(Time.timeAsDouble, out var sample))
+            {
+                _hasPose = false;
+                return;
+            }
+            _hasPose = true;
 
             LastSample = sample;
             State = _detector.Update(

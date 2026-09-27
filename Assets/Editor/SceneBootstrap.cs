@@ -101,6 +101,8 @@ namespace RowVR.Editor
             var rig = rigObject.AddComponent<RowingRig>();
             rigObject.AddComponent<StrokeReadout>();
             rigObject.AddComponent<HandRecorder>();
+            // Tier 2 replays a recorded take by default; untick it to use the simulator.
+            rigObject.AddComponent<ClipPlayback>();
 
             // Both fields are private [SerializeField], so they are set through
             // SerializedObject rather than by making them public purely for this script.
