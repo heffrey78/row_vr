@@ -446,9 +446,10 @@ API 34, build UP1A.231005.007.A1.
 - [x] Play Mode replaying a recorded take drives the detector *(2026-09-27)*. With
       `ClipPlayback` on the steady rowing-machine take: 13 catches, 1 withdrawn, 12 net,
       matching the rower's count, and every pass identical. Play Mode starts quickly.
-- [ ] Play Mode with the XR Interaction Simulator's hands in hand mode. *(2026-09-27)*:
-      in its default controller mode the readout shows "both hands untracked". Hand mode
-      itself hasn't been tried.
+- [x] Play Mode with the XR Interaction Simulator's hands *(2026-09-27)*. In hand mode
+      the readout reports the simulated hands as tracking. In the default controller mode
+      it shows "both hands untracked", as expected. Keyboard motion was not checked for
+      strokes; recordings cover that.
 - [x] `make test` — 53 tests pass *(2026-09-27)*, **~2.8s warm** wall clock, with test
       execution itself ~260ms. First run *(2026-09-22)*: 30 tests, 2.65s warm, 8.1s cold
       including .NET first-run setup. That first run compiled clean with Unity not
