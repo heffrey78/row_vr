@@ -307,11 +307,11 @@ make disconnect
 
 The connection drops when the headset sleeps. Re-run `make connect`.
 
-This includes during a `make dev` build. The headset sleeps soon after you take it off,
-and a build takes minutes. On 2026-09-27 the Wi-Fi connection dropped while the build ran,
-and deploy then failed with "No Quest detected". The APK was fine: `make connect` followed
-by `make deploy` installed it. To avoid that, keep the headset on, or run `make build`
-first and `make connect && make deploy` once it finishes.
+Unity also drops it: at the end of every command-line build it kills the adb server
+(`Killing ADB server` at the end of `.devloop/build.log`). A USB device comes back by
+itself when the next adb command starts a new server. A Wi-Fi connection existed only in
+the old server, so it's gone. `make dev` reconnects to the same address after the build.
+If you run `make build` on its own, run `make connect` before `make deploy`.
 
 ---
 
