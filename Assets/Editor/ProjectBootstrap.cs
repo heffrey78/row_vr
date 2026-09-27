@@ -202,14 +202,6 @@ namespace RowVR.Editor
 
             sb.AppendLine();
             sb.AppendLine(XRBootstrap.Describe());
-            sb.AppendLine();
-            sb.AppendLine("  Set these by hand once (this script cannot do them reliably):");
-            sb.AppendLine("   5. Scene: run 'RowVR > Create Rowing Scene' once - it builds the rig and");
-            sb.AppendLine("      wires it. The menu item is 'XR Origin (VR)', not 'XR Origin (XR Rig)'.");
-            sb.AppendLine("   5b. Tier 2 needs the simulator, which is a package SAMPLE, not a menu item:");
-            sb.AppendLine("      Package Manager > XR Interaction Toolkit > Samples > XR Interaction");
-            sb.AppendLine("      Simulator > Import.");
-            sb.AppendLine("   6. Window > Analysis > Rendering Debugger is your friend for the perf pass");
             return sb.ToString();
         }
 
