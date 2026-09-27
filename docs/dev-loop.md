@@ -439,10 +439,10 @@ API 34, build UP1A.231005.007.A1.
       an immersive OpenXR app, and logcat shows real Quest hand tracking reaching the
       detector (`hand source: ok`, `catch #9 54.7 spm`). Wall-clock times are in the
       tier 3 table: 13:16 cold, ~1:00 warm.
-- [ ] `make dev` over wireless adb, uninterrupted, no cable. *(2026-09-27)*: the build
-      (136 s) and the install and launch each worked over Wi-Fi, but the connection
-      dropped during the build, so the install needed a `make connect` first. See
-      section 3.
+- [x] `make dev` over wireless adb, uninterrupted, no cable *(2026-09-27)*. The build took
+      103 s. Unity killed the adb server as it exited, `make dev` reconnected to the Wi-Fi
+      address by itself, then installed and launched the app. Earlier runs that day had
+      failed at exactly that point; see section 3.
 - [x] Play Mode replaying a recorded take drives the detector *(2026-09-27)*. With
       `ClipPlayback` on the steady rowing-machine take: 13 catches, 1 withdrawn, 12 net,
       matching the rower's count, and every pass identical. Play Mode starts quickly.
