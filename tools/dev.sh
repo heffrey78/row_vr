@@ -9,4 +9,13 @@ serial="$(adb_device)"
 dim "target: $serial"
 
 "$REPO_ROOT/tools/build.sh"
+
+# Unity kills the adb server when a batch-mode build exits ("Killing ADB server" at the end
+# of .devloop/build.log). A USB device reappears when the next adb command starts a new
+# server, but a wireless connection only ever lived in the old server's memory, so it is
+# gone and deploy would fail with "No Quest detected". Reconnect to the same address.
+if [[ "$serial" == *:* ]]; then
+  IP="${serial%:*}" PORT="${serial##*:}" "$REPO_ROOT/tools/quest-connect.sh"
+fi
+
 exec "$REPO_ROOT/tools/deploy.sh"
