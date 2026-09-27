@@ -37,6 +37,18 @@ namespace RowVR.Rowing
         /// </summary>
         public string RecordingStatus { get; set; }
 
+        /// <summary>
+        /// Starts the stroke count again from zero. The count otherwise runs for as long as the
+        /// app does - and on Quest the app survives the headset sleeping - so a take rowed an
+        /// hour after an earlier session carried on from that session's total (12 strokes
+        /// read as 23).
+        /// </summary>
+        public void ResetStrokeCount()
+        {
+            _strokes = 0;
+            if (logToConsole) Debug.Log("[RowVR] stroke count reset");
+        }
+
         RowingRig _rig;
         StrokeState _state;
         int _strokes;

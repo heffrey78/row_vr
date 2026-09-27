@@ -103,6 +103,10 @@ namespace RowVR.Recording
             _startTime = Time.timeAsDouble;
             IsRecording = true;
 
+            // A take is a piece: count its strokes from zero, so the panel matches the rower's
+            // own count for this take rather than everything since the app launched.
+            if (_readout != null) _readout.ResetStrokeCount();
+
             Debug.Log($"[RowVR] Recording started: {_takeNote}");
         }
 

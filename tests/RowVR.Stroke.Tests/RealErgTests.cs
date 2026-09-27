@@ -26,6 +26,11 @@ namespace RowVR.Stroke.Tests
         const string Sloppy = "real-erg-sloppy-12strokes-20260927.rowclip";
         const string Stop = "real-erg-stop-6-6-20260927.rowclip";
 
+        // Two kinds of letting go, 4 strokes around each: 4 strokes; release A (hands moved
+        // away, ~14s); 4 strokes; release B (fingers opened, hands left still, ~29-35s);
+        // 4 strokes; a natural release at the end (~48s).
+        const string Releases = "real-erg-release-types-12strokes-20260927.rowclip";
+
         // erg-stop: 6 strokes, a stop at the finish from ~20s (tracking lost 21.1-24.9s), 6 more.
         const double StopBoundary = 22.0;
 
@@ -84,6 +89,7 @@ namespace RowVR.Stroke.Tests
         [TestCase(Steady)]
         [TestCase(Sloppy)]
         [TestCase(Stop)]
+        [TestCase(Releases)]
         public void CountsTwelveStrokes(string fixture)
         {
             Assert.That(Net(Run(fixture)), Is.EqualTo(12), Describe(Run(fixture)));
@@ -141,6 +147,33 @@ namespace RowVR.Stroke.Tests
             Assert.That(median, Is.InRange(17f, 23f), string.Join(", ", rates));
             foreach (var rate in settled)
                 Assert.That(rate, Is.EqualTo(median).Within(10).Percent, string.Join(", ", rates));
+        }
+        [Test]
+        public void EachSetAroundTheReleasesCountsFour()
+        {
+            Assert.That(Net(Window(Releases, 0, 13)), Is.EqualTo(4), Describe(Run(Releases)));
+            Assert.That(Net(Window(Releases, 17, 30)), Is.EqualTo(4), Describe(Run(Releases)));
+            Assert.That(Net(Window(Releases, 35, 46)), Is.EqualTo(4), Describe(Run(Releases)));
+        }
+
+        [Test]
+        public void LettingGoWithTheHandsMovingIsWithdrawn()
+        {
+            // Release A: the hands moved away as they let go. The handle's pull-back fires a
+            // catch, and the grip break plus a still seat takes it back.
+            var releaseA = Window(Releases, 13, 17).ToList();
+            Assert.That(releaseA.Count(e => e.Withdrawn), Is.EqualTo(1), Describe(releaseA));
+            Assert.That(Net(releaseA), Is.EqualTo(0), Describe(releaseA));
+        }
+
+        [Test]
+        public void LettingGoWithTheHandsStillProducesNothing()
+        {
+            // Release B: fingers opened, hands left where they were. The detector follows the
+            // hands, not the handle, so nothing it watches moved - no catch, nothing to
+            // withdraw. (Feared, before this recording, to be a gap in the grip check.)
+            var releaseB = Window(Releases, 29, 35).ToList();
+            Assert.That(releaseB, Is.Empty, Describe(releaseB));
         }
     }
 }
