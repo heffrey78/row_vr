@@ -33,6 +33,14 @@ namespace RowVR.Rowing
         /// <summary>Raised on the frame the drive ends.</summary>
         public event Action<StrokeMetrics> Finish;
 
+        /// <summary>
+        /// Raised when the most recent catch is taken back: the hands left the handle right
+        /// after it and the seat never moved, so it was the handle being released, not a
+        /// stroke. Anything that counted the Catch must undo it. Can arrive up to ~1.5s after
+        /// the catch, or after a tracking gap. Carries the metrics as restored.
+        /// </summary>
+        public event Action<StrokeMetrics> CatchWithdrawn;
+
         /// <summary>Raised every frame a pose was available.</summary>
         public event Action<StrokeState> Tick;
 
@@ -90,6 +98,7 @@ namespace RowVR.Rowing
                 sample.HeadForward);
 
             Tick?.Invoke(State);
+            if (State.CatchWithdrawn) CatchWithdrawn?.Invoke(State.Metrics);
 
             // Catch and Finish surface for exactly one update each, so this needs no edge
             // detection of its own.

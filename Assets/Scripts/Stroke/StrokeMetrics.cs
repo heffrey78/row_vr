@@ -71,18 +71,29 @@ namespace RowVR.Stroke
 
         public readonly StrokeMetrics Metrics;
 
+        /// <summary>
+        /// True on the single update where the most recent catch was taken back: the hands
+        /// left the handle within <see cref="StrokeDetectorSettings.CatchWithdrawSeconds"/>
+        /// of it, so it was the handle being released, not a stroke. Anything counting
+        /// catches must subtract these. <see cref="Metrics"/> is already restored to what it
+        /// was before the withdrawn catch.
+        /// </summary>
+        public readonly bool CatchWithdrawn;
+
         public StrokeState(
             StrokePhase phase,
             float handlePosition,
             float handleVelocity,
             float normalizedPosition,
-            StrokeMetrics metrics)
+            StrokeMetrics metrics,
+            bool catchWithdrawn = false)
         {
             Phase = phase;
             HandlePosition = handlePosition;
             HandleVelocity = handleVelocity;
             NormalizedPosition = normalizedPosition;
             Metrics = metrics;
+            CatchWithdrawn = catchWithdrawn;
         }
     }
 }

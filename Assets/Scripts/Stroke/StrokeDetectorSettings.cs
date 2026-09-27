@@ -66,6 +66,33 @@ namespace RowVR.Stroke
         public float PauseSeconds = 2.0f;
 
         /// <summary>
+        /// How far, in metres, the distance between the hands may drift from the rower's
+        /// established grip before the hands count as having left the handle. 0 disables the
+        /// check entirely.
+        ///
+        /// On a rowing machine both hands hold one handle, so their spacing barely moves: in
+        /// the machine recordings it held at 0.31m +/- 0.8cm for whole pieces, and broke within
+        /// ~0.1-0.3s whenever the rower let go. That makes it a clean "still rowing?" signal.
+        /// Letting go, the cord pulls the handle back 0.4-0.5m, which otherwise reads as a
+        /// drive and is counted as a stroke. 5cm is ~6 standard deviations of the rowing grip.
+        ///
+        /// Disable it (0) for anything without a handle: in the standing, arms-only
+        /// recordings only 29-48% of samples sat within 5cm of the median spacing.
+        /// </summary>
+        public float HandleGripToleranceMetres = 0.05f;
+
+        /// <summary>
+        /// If the grip breaks within this long of a catch (with no finish since), that catch
+        /// becomes suspect: letting go of the handle fires a catch before the grip visibly
+        /// breaks - by 0.1-0.3s in the recordings. A suspect catch stands if the seat slides
+        /// back as in a real drive, and is withdrawn (StrokeState.CatchWithdrawn) otherwise;
+        /// see StrokeDetector.EvaluateSuspectCatch. Withdrawing keeps catch events on time for
+        /// every real stroke - the alternative, confirming every catch late, delays them all.
+        /// A grip break outside this window, mid-recovery say, simply stops rowing.
+        /// </summary>
+        public float CatchWithdrawSeconds = 0.6f;
+
+        /// <summary>
         /// Half-life in seconds for the observed range (min/max handle position). The range
         /// has to decay or one freak reach would raise the ceiling for the rest of the
         /// session; decaying too fast makes the normalization drift mid-piece.

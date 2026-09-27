@@ -51,6 +51,7 @@ namespace RowVR.Rowing
             _rig.Tick += OnTick;
             _rig.Catch += OnCatch;
             _rig.Finish += OnFinish;
+            _rig.CatchWithdrawn += OnCatchWithdrawn;
         }
 
         void OnDisable()
@@ -59,6 +60,14 @@ namespace RowVR.Rowing
             _rig.Tick -= OnTick;
             _rig.Catch -= OnCatch;
             _rig.Finish -= OnFinish;
+            _rig.CatchWithdrawn -= OnCatchWithdrawn;
+        }
+
+        void OnCatchWithdrawn(StrokeMetrics metrics)
+        {
+            if (_strokes > 0) _strokes--;
+            if (logToConsole)
+                Debug.Log($"[RowVR] catch withdrawn - hands left the handle; strokes back to {_strokes}");
         }
 
         void OnTick(StrokeState state) => _state = state;

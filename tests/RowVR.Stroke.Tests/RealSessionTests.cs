@@ -59,7 +59,9 @@ namespace RowVR.Stroke.Tests
             Assert.That(File.Exists(path), Is.True, $"missing fixture {path}");
 
             var clip = HandClip.Load(path);
-            var detector = new StrokeDetector();
+            // Standing, arms only: no handle, so the hands' spacing wanders freely and the
+            // grip check would read ordinary rowing as letting go. See HandleGripToleranceMetres.
+            var detector = new StrokeDetector(new StrokeDetectorSettings { HandleGripToleranceMetres = 0f });
             var t0 = clip.Samples[0].TimeSeconds;
 
             s_catches = new List<Catch>();

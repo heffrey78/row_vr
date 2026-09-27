@@ -76,6 +76,36 @@ namespace RowVR.Stroke
         float _lastStrokeMin;
         float _lastStrokeMax;
 
+        // Grip: the distance between the hands while rowing. See HandleGripToleranceMetres.
+        bool _hasGrip;
+        float _gripBaseline;
+        bool _handsOff;
+        double _handsOffSince;
+        // The grip is only adopted once the spacing has held steady; see UpdateGrip.
+        float _gripCandidate;
+        double _gripCandidateSince;
+
+        // A catch followed closely by a change of grip: letting go, or just a grip change
+        // mid-stroke. Decided by how far the handle then travels. See EvaluateSuspectCatch.
+        bool _suspectCatch;
+        double _suspectSince;
+        // Seat slide: how far the head moves back along the drive axis during a drive. On a
+        // rowing machine the legs drive first, so every real stroke moves the seat early.
+        float _head;
+        float _headAtCatch;
+        bool _hasSeatSlide;
+        float _typicalSeatSlide;
+
+        // Enough state to take back the most recent catch. See CatchWithdrawSeconds.
+        bool _catchWithdrawable;
+        double _catchReportedAt;
+        StrokeMetrics _metricsBeforeCatch;
+        double _lastCatchTimeBeforeCatch;
+        float _lastRecoverySecondsBeforeCatch;
+        bool _hasStrokeExtentBeforeCatch;
+        float _lastStrokeMinBeforeCatch;
+        float _lastStrokeMaxBeforeCatch;
+
         public StrokeDetector(StrokeDetectorSettings settings = null)
         {
             _settings = settings ?? new StrokeDetectorSettings();
@@ -106,6 +136,11 @@ namespace RowVR.Stroke
             _needTravel = false;
             _restWasAtCatch = false;
             _hasStrokeExtent = false;
+            _hasGrip = false;
+            _handsOff = false;
+            _catchWithdrawable = false;
+            _suspectCatch = false;
+            _hasSeatSlide = false;
         }
 
         /// <summary>
@@ -136,7 +171,23 @@ namespace RowVR.Stroke
                 return CurrentState(_previousPosition, 0f);
             }
 
+            var gapWithdrew = false;
+            if (_hasPrevious && dt >= _settings.PauseSeconds)
+            {
+                // Tracking was lost for longer than a pause. On a rowing machine this is the
+                // rower stopped at the finish with hands against the body, out of the cameras'
+                // view: no samples means no measured stillness, so TrackPause never fires, and
+                // the next stroke was merged into the last one at ~6 spm. A gap this long is a
+                // stop, whatever the handle was doing.
+                gapWithdrew = _suspectCatch && WithdrawSuspect();
+                OnPause(_previousPosition);
+                _restEndTime = timeSeconds;
+                _still = false;
+                _pauseHandled = false;
+            }
+
             UpdateReferenceFrame(dt, headPosition, headForward);
+            _head = Vec3.Dot(headPosition, _driveAxis);
 
             var raw = Vec3.Dot(handle - _seatOrigin, _driveAxis);
             var position = _positionFilter.Filter(raw, timeSeconds);
@@ -158,6 +209,15 @@ namespace RowVR.Stroke
 
             var span = _rangeMax - _rangeMin;
             TrackPause(timeSeconds, velocity, position);
+
+            UpdateGrip(timeSeconds, dt, Vec3.Distance(leftHand, rightHand), position);
+            var withdrawn = gapWithdrew || EvaluateSuspectCatch(timeSeconds, position);
+            if (_handsOff || withdrawn)
+            {
+                // Hands are off the handle: whatever the handle does now, it is not rowing.
+                _phase = StrokePhase.Unknown;
+                return CurrentState(position, velocity, withdrawn);
+            }
 
             if (!_hasRange || span < _settings.MinStrokeLengthMetres)
             {
@@ -198,6 +258,166 @@ namespace RowVR.Stroke
             AdvancePhase(timeSeconds, velocity, normalized);
 
             return new StrokeState(_phase, position, velocity, normalized, _metrics);
+        }
+
+        /// <summary>
+        /// Tracks whether both hands are on the handle, from how far apart they are. The grip
+        /// is learned only while rowing (drive or recovery), and only once the spacing has
+        /// held steady for half a second: the reach to the first catch often starts before
+        /// the hands settle, and learning the first sample adopted a 0.60m "grip" that made
+        /// the real 0.31m one read as letting go, losing the first stroke.
+        /// </summary>
+        void UpdateGrip(double timeSeconds, float dt, float separation, float position)
+        {
+            var tolerance = _settings.HandleGripToleranceMetres;
+            if (tolerance <= 0f) return;
+
+            if (_hasGrip)
+            {
+                var off = Math.Abs(separation - _gripBaseline) > tolerance;
+                if (off && !_handsOff)
+                {
+                    if (_catchWithdrawable && timeSeconds - _catchReportedAt <= _settings.CatchWithdrawSeconds)
+                    {
+                        // Right after a catch. Letting go looks like this, but so does a rower
+                        // changing grip at the start of a stroke - the machine recordings have
+                        // both. Keep rowing and let the handle's travel decide.
+                        _suspectCatch = true;
+                        _suspectSince = timeSeconds;
+                        _hasGrip = false;           // the grip has changed either way; relearn it
+                        return;
+                    }
+
+                    _handsOff = true;
+                    _handsOffSince = timeSeconds;
+                    StopRowing(position);
+                }
+                else if (off && timeSeconds - _handsOffSince >= _settings.PauseSeconds)
+                {
+                    // Off for as long as a pause: a new grip, not a slip. Forget the old width
+                    // so it is relearned when rowing resumes - a rower who regrips wider would
+                    // otherwise read as hands-off for the rest of the session.
+                    _hasGrip = false;
+                    _handsOff = false;
+                }
+                else if (!off)
+                {
+                    _handsOff = false;
+                }
+            }
+
+            // Learn only from settled rowing. Not while a catch is suspect: the grip is known to
+            // be changing then, and learning it adopted the rower's "hands in, stopping" spacing
+            // - so their normal grip on the next stroke read as letting go, and that stroke was
+            // lost.
+            if (_handsOff || _suspectCatch || (_phase != StrokePhase.Drive && _phase != StrokePhase.Recovery)) return;
+
+            if (!_hasGrip)
+            {
+                if (Math.Abs(separation - _gripCandidate) <= tolerance * 0.5f)
+                {
+                    _gripCandidate += (separation - _gripCandidate) * 0.1f;
+                    if (timeSeconds - _gripCandidateSince >= 0.5)
+                    {
+                        _gripBaseline = _gripCandidate;
+                        _hasGrip = true;
+                    }
+                }
+                else
+                {
+                    _gripCandidate = separation;
+                    _gripCandidateSince = timeSeconds;
+                }
+            }
+            else
+            {
+                var alpha = 1f - (float)Math.Exp(-dt / 3f);
+                _gripBaseline += (separation - _gripBaseline) * alpha;
+            }
+        }
+
+        /// <summary>
+        /// Decides a suspect catch by whether the seat moves. On a rowing machine the drive
+        /// begins with the legs, so a real stroke slides the rower - and the head - back
+        /// early. Letting go of the handle leaves them sitting where they were, with at most
+        /// a small lean back.
+        ///
+        /// From the machine recordings, measured as this method measures it (head at the
+        /// catch report, as a share of the rower's learned slide): releases peak at 44-46%
+        /// within 1.5s, drawing the handle in to stop at ~20%, and a real stroke rowed with a
+        /// grip change reaches 58% by 1.0s and 75% by 1.5s. 58% sits about midway between the
+        /// worst release and the real stroke at 1.5s. (A first cut at 50% cleared a release
+        /// by under 6 points, and that release was still creeping toward the line as the rower
+        /// leaned back.) Handle travel was tried first and failed: after letting go, the handle keeps
+        /// drifting on the cord and eventually covers a stroke's worth, while a hesitant real
+        /// drive can stall long enough to look like a stop.
+        ///
+        /// Thin evidence: one real grip-change stroke against three phantoms. Revisit with
+        /// more machine recordings. Returns true if the catch was withdrawn on this update.
+        /// </summary>
+        bool EvaluateSuspectCatch(double timeSeconds, float position)
+        {
+            if (!_suspectCatch) return false;
+
+            if (!_catchWithdrawable)
+            {
+                // The drive reached a finish: it was a stroke.
+                _suspectCatch = false;
+                return false;
+            }
+
+            var usual = _hasSeatSlide ? _typicalSeatSlide : DefaultSeatSlideMetres;
+            if (_headAtCatch - _head >= SeatSlideShareForStroke * usual)
+            {
+                _suspectCatch = false;
+                return false;
+            }
+
+            if (timeSeconds - _catchReportedAt < SuspectDecisionSeconds) return false;
+            return WithdrawSuspect(position);
+        }
+
+        const float DefaultSeatSlideMetres = 0.5f;
+        const float SeatSlideShareForStroke = 0.58f;
+        const double SuspectDecisionSeconds = 1.5;
+
+        bool WithdrawSuspect(float position = float.NaN)
+        {
+            _suspectCatch = false;
+            var withdrawn = TryWithdrawCatch();
+            if (!float.IsNaN(position)) StopRowing(position);
+            return withdrawn;
+        }
+
+        bool TryWithdrawCatch()
+        {
+            if (!_catchWithdrawable) return false;
+
+            _catchWithdrawable = false;
+            _metrics = _metricsBeforeCatch;
+            _lastCatchTime = _lastCatchTimeBeforeCatch;
+            _lastRecoverySeconds = _lastRecoverySecondsBeforeCatch;
+            _hasStrokeExtent = _hasStrokeExtentBeforeCatch;
+            _lastStrokeMin = _lastStrokeMinBeforeCatch;
+            _lastStrokeMax = _lastStrokeMaxBeforeCatch;
+            return true;
+        }
+
+        /// <summary>
+        /// Hands off the handle. Treated like a pause - rate does not span it and travel must
+        /// be rebuilt before anything counts - except that it is never a catch to resume from:
+        /// wherever the hands let go, the next stroke starts from a fresh grip.
+        /// </summary>
+        void StopRowing(float position)
+        {
+            _phase = StrokePhase.Unknown;
+            _lastCatchTime = double.NaN;
+            _lastFinishTime = double.NaN;
+            _needTravel = true;
+            _sinceRestMin = position;
+            _sinceRestMax = position;
+            _restWasAtCatch = false;
+            _suspectCatch = false;
         }
 
         /// <summary>
@@ -389,6 +609,18 @@ namespace RowVR.Stroke
 
         void OnCatch(double timeSeconds)
         {
+            // Everything this catch changes, so it can be taken back if the hands turn out to
+            // have been letting go of the handle.
+            _catchWithdrawable = true;
+            _catchReportedAt = timeSeconds;
+            _metricsBeforeCatch = _metrics;
+            _lastCatchTimeBeforeCatch = _lastCatchTime;
+            _lastRecoverySecondsBeforeCatch = _lastRecoverySeconds;
+            _hasStrokeExtentBeforeCatch = _hasStrokeExtent;
+            _lastStrokeMinBeforeCatch = _lastStrokeMin;
+            _lastStrokeMaxBeforeCatch = _lastStrokeMax;
+            _headAtCatch = _head;
+
             // Report the turn, not the moment we became sure of it.
             var catchTime = _extremumTime > 0d ? _extremumTime : timeSeconds;
 
@@ -427,6 +659,17 @@ namespace RowVR.Stroke
 
         void OnFinish(double timeSeconds)
         {
+            // A drive that reached the finish was a stroke. It is no longer withdrawable.
+            _catchWithdrawable = false;
+
+            // Learn how far this rower's seat usually slides in a drive.
+            var slide = _headAtCatch - _head;
+            if (slide > 0.05f)
+            {
+                _typicalSeatSlide = _hasSeatSlide ? _typicalSeatSlide + (slide - _typicalSeatSlide) * 0.3f : slide;
+                _hasSeatSlide = true;
+            }
+
             var finishTime = _extremumTime > 0d ? _extremumTime : timeSeconds;
 
             if (!double.IsNaN(_lastCatchTime))
@@ -448,11 +691,11 @@ namespace RowVR.Stroke
             _extremumTime = timeSeconds;
         }
 
-        StrokeState CurrentState(float position, float velocity)
+        StrokeState CurrentState(float position, float velocity, bool catchWithdrawn = false)
         {
             var span = _rangeMax - _rangeMin;
             var normalized = _hasRange && span > 1e-4f ? Clamp01((position - _rangeMin) / span) : 0f;
-            return new StrokeState(_phase, position, velocity, normalized, _metrics);
+            return new StrokeState(_phase, position, velocity, normalized, _metrics, catchWithdrawn);
         }
 
         static float Clamp01(float v) => v < 0f ? 0f : (v > 1f ? 1f : v);
