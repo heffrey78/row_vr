@@ -548,6 +548,8 @@ GameObject:
   - component: {fileID: 1483306191}
   - component: {fileID: 1483306195}
   - component: {fileID: 1483306196}
+  - component: {fileID: 1483306197}
+  - component: {fileID: 1483306198}
   m_Layer: 0
   m_Name: Rowing Rig
   m_TagString: Untagged
@@ -651,6 +653,40 @@ MonoBehaviour:
   staleSeconds: 0.5
   liveColor: {r: 0.85, g: 0.85, b: 0.8, a: 1}
   staleColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+--- !u!114 &1483306197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5a401d05e204f4b842f64e70a1652df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.OarsView
+  oarlockSpread: 0.8
+  inboard: 0.88
+  outboard: 2
+  waterBelowOarlock: 0.25
+  buriedDepth: 0.08
+  clearance: 0.12
+  frameFollowSeconds: 4
+  maxSweepDegreesPerSecond: 600
+  showWater: 1
+--- !u!114 &1483306198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82354c185fec4dbba8a4d4927f2c2d24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.GripDisplay
+  mode: 0
 --- !u!1 &1523737649
 GameObject:
   m_ObjectHideFlags: 0
