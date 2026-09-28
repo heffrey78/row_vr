@@ -16,7 +16,8 @@ namespace RowVR.Rowing
     /// hand, and after <see cref="staleSeconds"/> it dims to say the pose is old. It never
     /// shows before the first pose, so it cannot appear parked at the world origin.
     ///
-    /// Placeholder geometry, built in code so there is no asset to import yet.
+    /// Placeholder geometry, built in code so there is no asset to import yet. One of two
+    /// grip displays; <see cref="GripDisplay"/> chooses between this and the oars.
     /// </summary>
     [RequireComponent(typeof(RowingRig))]
     public sealed class HandleView : MonoBehaviour
@@ -65,6 +66,13 @@ namespace RowVR.Rowing
             _renderer = handle.GetComponent<Renderer>();
             _renderer.material.color = liveColor;
             _renderer.enabled = false;
+        }
+
+        // Hidden while switched off, e.g. by GripDisplay in oars mode. It reappears on the
+        // next pose once enabled again.
+        void OnDisable()
+        {
+            if (_renderer != null) _renderer.enabled = false;
         }
 
         void OnDestroy()
