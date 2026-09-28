@@ -41,6 +41,7 @@ namespace RowVR.Editor
             ApplyEditorSettings();
             ApplyPlayerSettings();
             ApplyQualitySettings();
+            ApplyAudioSettings();
 
             // Must precede ConfigureXr: that method only tunes OpenXR settings that already
             // exist, and bails out when no plug-in provider has been enabled for Android.
@@ -100,6 +101,44 @@ namespace RowVR.Editor
             // Quest has no on-screen splash to show and the default one costs startup time.
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SplashScreen.showUnityLogo = false;
+        }
+
+        /// <summary>
+        /// DSP buffer size for "Best latency". The catch sound is the stroke's beat with no
+        /// haptics to back it up, and Android's default buffer adds tens of milliseconds
+        /// before it is heard. Set on the AudioManager asset, since there is no public editor
+        /// API for it.
+        /// </summary>
+        const int BestLatencyDspBuffer = 256;
+
+        static void ApplyAudioSettings()
+        {
+            var audioManager = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/AudioManager.asset")
+                .FirstOrDefault();
+            if (audioManager == null)
+            {
+                Debug.LogWarning("[RowVR] AudioManager settings not found; DSP buffer size not set.");
+                return;
+            }
+
+            var serialized = new SerializedObject(audioManager);
+            // Unity 6 keeps the Inspector's value in m_RequestedDSPBufferSize and the legacy
+            // one in m_DSPBufferSize; set both so neither overrides the other.
+            foreach (var name in new[] { "m_RequestedDSPBufferSize", "m_DSPBufferSize" })
+            {
+                var property = serialized.FindProperty(name);
+                if (property != null) property.intValue = BestLatencyDspBuffer;
+            }
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static int DspBufferSize()
+        {
+            var audioManager = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/AudioManager.asset")
+                .FirstOrDefault();
+            return audioManager == null
+                ? -1
+                : new SerializedObject(audioManager).FindProperty("m_RequestedDSPBufferSize")?.intValue ?? -1;
         }
 
         static void ApplyQualitySettings()
@@ -199,6 +238,7 @@ namespace RowVR.Editor
                 " (want 32 / 34)");
             sb.AppendLine("  serialization     : " + EditorSettings.serializationMode + " (want ForceText)");
             sb.AppendLine("  MSAA              : " + QualitySettings.antiAliasing + "x (want 4x)");
+            sb.AppendLine("  DSP buffer        : " + DspBufferSize() + " (want " + BestLatencyDspBuffer + ", Best latency)");
 
             sb.AppendLine();
             sb.AppendLine(XRBootstrap.Describe());
