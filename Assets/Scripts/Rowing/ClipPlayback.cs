@@ -30,6 +30,13 @@ namespace RowVR.Rowing
         [Tooltip("Draw the recorded palms, so the motion can be seen as well as the numbers.")]
         [SerializeField] bool showHands = true;
 
+        [Tooltip("Report no pose where the recording lost tracking, as the headset does, " +
+                 "instead of gliding across the gap. Recordings sample every ~14 ms.")]
+        [SerializeField] bool keepTrackingGaps = true;
+
+        /// <summary>A gap between samples longer than this, seconds, counts as lost tracking.</summary>
+        const double TrackingGapSeconds = 0.1;
+
         RowingRig _rig;
         StrokeReadout _readout;
         HandClip _clip;
@@ -67,7 +74,9 @@ namespace RowVR.Rowing
             _rig = GetComponent<RowingRig>();
             _readout = GetComponent<StrokeReadout>();
             _name = Path.GetFileNameWithoutExtension(path);
-            _timeline = new Timeline(new ClipHandPoseSource(_clip));
+            var source = new ClipHandPoseSource(_clip);
+            if (keepTrackingGaps) source.MaxGapSeconds = TrackingGapSeconds;
+            _timeline = new Timeline(source);
 
             if (showHands)
             {
