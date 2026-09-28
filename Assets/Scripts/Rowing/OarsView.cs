@@ -11,8 +11,9 @@ namespace RowVR.Rowing
     /// through the oarlock, so the sweep is the rower's own motion. Blade depth comes from
     /// <see cref="OarKinematics"/>, which is tested against the rowing-machine recordings:
     /// on the machine the hands barely rise or fall, so hand height cannot drive the blade.
-    /// A rigid oar through a fixed oarlock cannot satisfy both at once, so each oar is drawn
-    /// in two pieces, inboard and outboard, meeting at the oarlock, with a small bend there.
+    /// A straight oar through an oarlock fixed in height cannot satisfy both at once, so the
+    /// pivot rides up and down to sit on the straight line from the hand to the blade. There
+    /// is no boat or oarlock drawn yet, so nothing shows the pivot moving.
     ///
     /// When no stroke is tracked (before the first, after a stop, after letting go) the oars
     /// leave the hands and ease to square with the blades out, so waving the hands about does
@@ -193,17 +194,34 @@ namespace RowVR.Rowing
             var reach = outboard - BladeLength * 0.5f;
             var drop = Mathf.Clamp(bladeY - oarlockY, -reach * 0.9f, reach * 0.9f);
             var along = (flat * Mathf.Sqrt(reach * reach - drop * drop) + Vector3.up * drop).normalized;
-            oar.Outboard.SetPositionAndRotation(oarlock, Quaternion.LookRotation(along, Vector3.up));
+            var pivot = oarlock;
 
             // The handle end is in the hand only while it is the hand's line that set the
             // sweep; while easing to or from rest it stays on the oar's own line.
-            var handleEnd = held && Mathf.Abs(oar.Sweep - target) < 0.5f
-                ? hand
-                : oarlock - along * inboard;
-            var toHandle = handleEnd - oarlock;
+            var inHand = held && Mathf.Abs(oar.Sweep - target) < 0.5f;
+            if (inHand)
+            {
+                // Keep the oar straight from the hand to the blade. A pivot fixed in height
+                // would bend it wherever the hand's height and the blade's depth disagree,
+                // which is most of the stroke. There is no boat or oarlock drawn yet, so the
+                // pivot rides up and down the few centimetres needed to sit on that line.
+                var bladeCentre = oarlock + along * reach;
+                var line = bladeCentre - hand;
+                var inboardFlat = Vector3.ProjectOnPlane(oarlock - hand, Vector3.up).magnitude;
+                var totalFlat = Vector3.ProjectOnPlane(line, Vector3.up).magnitude;
+                if (totalFlat > 1e-3f)
+                {
+                    pivot = hand + line * Mathf.Clamp01(inboardFlat / totalFlat);
+                    along = line.normalized;
+                }
+            }
+            oar.Outboard.SetPositionAndRotation(pivot, Quaternion.LookRotation(along, Vector3.up));
+
+            var handleEnd = inHand ? hand : pivot - along * inboard;
+            var toHandle = handleEnd - pivot;
             var length = Mathf.Max(0.01f, toHandle.magnitude);
             oar.Inboard.SetPositionAndRotation(
-                oarlock + toHandle * 0.5f,
+                pivot + toHandle * 0.5f,
                 Quaternion.FromToRotation(Vector3.up, toHandle / length));
             // A unit cylinder is 2 units long along Y.
             oar.Inboard.localScale = new Vector3(ShaftDiameter, length * 0.5f, ShaftDiameter);
