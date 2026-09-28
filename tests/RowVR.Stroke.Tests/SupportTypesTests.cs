@@ -188,6 +188,35 @@ namespace RowVR.Stroke.Tests
         }
 
         [Test]
+        public void InterpolatesAcrossGapsByDefault()
+        {
+            var clip = new HandClip();
+            clip.Add(new HandSample(0d, Vec3.Zero, Vec3.Zero, Vec3.Zero, Vec3.Forward));
+            clip.Add(new HandSample(1d, new Vec3(0f, 0f, 2f), Vec3.Zero, Vec3.Zero, Vec3.Forward));
+
+            Assert.That(new ClipHandPoseSource(clip).TryGetPose(0.5d, out _), Is.True);
+        }
+
+        [Test]
+        public void ReportsNoPoseInsideAGapLongerThanMaxGap()
+        {
+            // Live tracking has no pose while the hands are lost; a replay set up to match
+            // must not invent one by interpolating.
+            var clip = new HandClip();
+            clip.Add(new HandSample(0.00d, Vec3.Zero, Vec3.Zero, Vec3.Zero, Vec3.Forward));
+            clip.Add(new HandSample(0.02d, Vec3.Zero, Vec3.Zero, Vec3.Zero, Vec3.Forward));
+            clip.Add(new HandSample(0.90d, new Vec3(0f, 0f, 2f), Vec3.Zero, Vec3.Zero, Vec3.Forward));
+            clip.Add(new HandSample(0.92d, new Vec3(0f, 0f, 2f), Vec3.Zero, Vec3.Zero, Vec3.Forward));
+
+            var source = new ClipHandPoseSource(clip) { MaxGapSeconds = 0.1d };
+
+            Assert.That(source.TryGetPose(0.01d, out _), Is.True, "inside normal sampling");
+            Assert.That(source.TryGetPose(0.50d, out _), Is.False, "inside the gap");
+            Assert.That(source.TryGetPose(0.91d, out var after), Is.True, "after the gap");
+            Assert.That(after.LeftHand.Z, Is.EqualTo(2f).Within(1e-4f));
+        }
+
+        [Test]
         public void SupportsRandomAccessAfterSequentialPlayback()
         {
             // The forward-only cursor is an optimisation for sequential replay; it must not

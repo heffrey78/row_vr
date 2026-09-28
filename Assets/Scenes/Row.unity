@@ -547,6 +547,7 @@ GameObject:
   - component: {fileID: 1483306192}
   - component: {fileID: 1483306191}
   - component: {fileID: 1483306195}
+  - component: {fileID: 1483306196}
   m_Layer: 0
   m_Name: Rowing Rig
   m_TagString: Untagged
@@ -632,6 +633,24 @@ MonoBehaviour:
   clipPath: tests/RowVR.Stroke.Tests/fixtures/real-erg-steady-12strokes-20260927.rowclip
   loop: 1
   showHands: 1
+  keepTrackingGaps: 1
+--- !u!114 &1483306196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40f40bfd047e4ca2bb9e7d886f717a22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.HandleView
+  length: 0.5
+  diameter: 0.035
+  staleSeconds: 0.5
+  liveColor: {r: 0.85, g: 0.85, b: 0.8, a: 1}
+  staleColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
 --- !u!1 &1523737649
 GameObject:
   m_ObjectHideFlags: 0

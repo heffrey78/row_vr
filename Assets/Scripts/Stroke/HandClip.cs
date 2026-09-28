@@ -164,6 +164,11 @@ namespace RowVR.Stroke
     /// Replays a <see cref="HandClip"/> as a pose source, interpolating between recorded
     /// samples so a test can step at whatever rate it likes regardless of the rate the clip
     /// was captured at.
+    ///
+    /// A recording has no samples while tracking was lost. By default those gaps are
+    /// interpolated across, as they always have been. Set <see cref="MaxGapSeconds"/> to
+    /// report no pose inside longer gaps instead, which is what live tracking does, so a
+    /// replay in the scene behaves like the headset through a dropout.
     /// </summary>
     public sealed class ClipHandPoseSource : IHandPoseSource
     {
@@ -174,6 +179,12 @@ namespace RowVR.Stroke
         {
             _clip = clip ?? throw new ArgumentNullException(nameof(clip));
         }
+
+        /// <summary>
+        /// Gaps between recorded samples longer than this, seconds, report no pose rather
+        /// than an interpolated one. Infinite by default.
+        /// </summary>
+        public double MaxGapSeconds { get; set; } = double.PositiveInfinity;
 
         public double StartTime => _clip.Samples.Count > 0 ? _clip.Samples[0].TimeSeconds : 0d;
         public double EndTime => _clip.Samples.Count > 0 ? _clip.Samples[_clip.Samples.Count - 1].TimeSeconds : 0d;
@@ -197,6 +208,11 @@ namespace RowVR.Stroke
             var a = samples[_cursor];
             var b = samples[Math.Min(_cursor + 1, samples.Count - 1)];
             var span = b.TimeSeconds - a.TimeSeconds;
+            if (span > MaxGapSeconds)
+            {
+                sample = default;
+                return false;
+            }
             var t = span > 1e-9d ? (float)((timeSeconds - a.TimeSeconds) / span) : 0f;
 
             sample = new HandSample(
