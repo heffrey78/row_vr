@@ -42,6 +42,73 @@ namespace RowVR.Editor
         [MenuItem("RowVR/Create Rowing Scene")]
         public static void Create() => TryCreate();
 
+        const string UnlitShaderPath = "Assets/Shaders/RowVRUnlit.shader";
+
+        /// <summary>
+        /// Adds the scenery (ADR-0008) to the open scene, or brings existing scenery up to
+        /// date. Safe to run repeatedly. Save the scene afterwards.
+        /// </summary>
+        [MenuItem("RowVR/Add Scenery")]
+        public static void AddScenery()
+        {
+            var camera = Object.FindFirstObjectByType<XROrigin>()?.Camera ?? Camera.main;
+            if (camera == null)
+            {
+                Debug.LogError("[RowVR] No XR Origin camera in the open scene; open Row.unity first.");
+                return;
+            }
+            if (ConfigureScenery(camera))
+            {
+                EditorSceneManager.MarkSceneDirty(camera.gameObject.scene);
+                Debug.Log("[RowVR] Scenery added: layers, sky, water and course; camera clear set to " +
+                          "transparent; fog on. Save the scene.");
+            }
+        }
+
+        /// <summary>
+        /// Everything here has to be saved in the scene rather than set at runtime:
+        ///  - the shader reference, or a device build strips the shader;
+        ///  - the fog, or URP strips the fog shader variants from the build, since it keeps
+        ///    only the fog modes some saved scene uses;
+        ///  - the camera clear, so the scene itself is passthrough-ready.
+        /// </summary>
+        static bool ConfigureScenery(Camera camera)
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(UnlitShaderPath);
+            if (shader == null)
+            {
+                Debug.LogError($"[RowVR] {UnlitShaderPath} not found; scenery not added.");
+                return false;
+            }
+
+            var layers = Object.FindFirstObjectByType<SceneryLayers>();
+            if (layers == null)
+            {
+                var scenery = new GameObject("Scenery");
+                layers = scenery.AddComponent<SceneryLayers>();
+                scenery.AddComponent<SkyDome>();
+                scenery.AddComponent<WaterSurface>();
+                scenery.AddComponent<CourseScenery>();
+            }
+
+            var serialized = new SerializedObject(layers);
+            serialized.FindProperty("unlitShader").objectReferenceValue = shader;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // Transparent black: where no layer draws, passthrough will show (ADR-0008).
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            camera.farClipPlane = 1000f;
+            EditorUtility.SetDirty(camera);
+
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogStartDistance = 150f;
+            RenderSettings.fogEndDistance = 800f;
+            RenderSettings.fogColor = layers.HorizonColour;
+            return true;
+        }
+
         /// <summary>
         /// Batch entry point. Carries its own exit code, for the same reason
         /// <see cref="BuildQuest"/> does: with -quit Unity reports success even when the
@@ -117,6 +184,7 @@ namespace RowVR.Editor
 
             AddSimulatorIfImported();
             AddHandVisualizerIfImported(origin.transform);
+            ConfigureScenery(origin.Camera);
 
             Directory.CreateDirectory(SceneDirectory);
             EditorSceneManager.MarkSceneDirty(scene);

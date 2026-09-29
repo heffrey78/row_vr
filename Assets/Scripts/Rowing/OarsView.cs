@@ -25,8 +25,9 @@ namespace RowVR.Rowing
     /// Within a stroke the oarlocks stay put while the rower slides; over a session they
     /// settle to wherever the rower actually sits. A real boat model can replace this later.
     ///
-    /// "Left" and "right" are from the rower's seat. Placeholder geometry, built in code,
-    /// with a water plane to judge blade depth until the scenery requirement adds real water.
+    /// "Left" and "right" are from the rower's seat. Placeholder geometry, built in code.
+    /// With SceneryLayers in the scene the oars sit in its Near layer and set its water
+    /// height; without it, a placeholder water plane shows blade depth.
     /// </summary>
     [RequireComponent(typeof(RowingRig))]
     public sealed class OarsView : MonoBehaviour
@@ -73,6 +74,7 @@ namespace RowVR.Rowing
         }
 
         RowingRig _rig;
+        SceneryLayers _scenery;
         readonly OarKinematics _kinematics = new OarKinematics();
         Oar _left, _right;
         Transform _water;
@@ -89,7 +91,19 @@ namespace RowVR.Rowing
             _left = CreateOar("Left Oar");
             _right = CreateOar("Right Oar");
 
-            if (showWater)
+            // With scenery present, the oars belong to its Near layer and the scenery draws
+            // the water; the oars only tell it how high the water is. Without scenery, keep
+            // the placeholder so blade depth can still be judged.
+            _scenery = FindFirstObjectByType<SceneryLayers>();
+            if (_scenery != null)
+            {
+                foreach (var oar in new[] { _left, _right })
+                {
+                    oar.Inboard.SetParent(_scenery.Near, true);
+                    oar.Outboard.SetParent(_scenery.Near, true);
+                }
+            }
+            else if (showWater)
             {
                 var water = GameObject.CreatePrimitive(PrimitiveType.Plane);
                 water.name = "Water (placeholder)";
@@ -135,6 +149,7 @@ namespace RowVR.Rowing
             PlaceOar(_right, right, sample.RightHand.ToVector3(), oarlockY, bladeY);
 
             if (_water != null) _water.position = new Vector3(_centre.x, waterY, _centre.z);
+            if (_scenery != null) _scenery.WaterHeight = waterY;
             SetVisible(true);
         }
 
