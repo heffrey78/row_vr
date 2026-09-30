@@ -550,6 +550,7 @@ GameObject:
   - component: {fileID: 1483306196}
   - component: {fileID: 1483306197}
   - component: {fileID: 1483306198}
+  - component: {fileID: 1483306199}
   m_Layer: 0
   m_Name: Rowing Rig
   m_TagString: Untagged
@@ -687,6 +688,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.GripDisplay
   mode: 0
+--- !u!114 &1483306199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76421681f2114e02ad1911f46c3d10ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.StrokeAudio
+  catchVolume: 0.9
+  finishVolume: 0.45
+  sideOffset: 1.2
+  belowHead: 0.6
+  logSounds: 1
 --- !u!1 &1523737649
 GameObject:
   m_ObjectHideFlags: 0

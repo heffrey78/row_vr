@@ -104,6 +104,7 @@ namespace RowVR.Editor
             rigObject.AddComponent<HandleView>();
             rigObject.AddComponent<OarsView>();
             rigObject.AddComponent<GripDisplay>();
+            rigObject.AddComponent<StrokeAudio>();
             // Tier 2 replays a recorded take by default; untick it to use the simulator.
             rigObject.AddComponent<ClipPlayback>();
 
@@ -131,7 +132,7 @@ namespace RowVR.Editor
             Debug.Log(
                 $"[RowVR] Created {ScenePath} and added it to Build Settings.\n" +
                 "  XR Origin (floor-relative) with its camera\n" +
-                "  Rowing Rig: RowingRig + StrokeReadout + HandRecorder + HandleView + OarsView + GripDisplay + ClipPlayback, trackingOrigin and head wired\n" +
+                "  Rowing Rig: RowingRig + StrokeReadout + HandRecorder + HandleView + OarsView + GripDisplay + StrokeAudio + ClipPlayback, trackingOrigin and head wired\n" +
                 "Commit the scene, then edit it in the Editor from here on.");
             return true;
         }
