@@ -125,11 +125,12 @@ namespace RowVR.Stroke.Tests
         }
 
         [Test]
-        public void Blade_lifts_when_a_missed_finish_leaves_the_detector_in_drive()
+        public void Blade_stays_out_while_a_premature_catch_leaves_the_detector_in_drive()
         {
-            // erg-sloppy: tracking drops for 0.85s around the finish at ~187.2s and comes back
-            // with the handle already heading for the catch. The detector stays in Drive
-            // until the next real drive, ~190s; the blade must be out for that recovery.
+            // erg-sloppy: a catch is called at 187.14 s with the hands low at the catch, tracking
+            // drops until 188.03 s, and the hands come back still heading for the catch. The
+            // detector stays in Drive until the real drive at ~190 s (TASK-0021); the blade must
+            // stay out until then.
             var frames = Replay("real-erg-sloppy-12strokes-20260927.rowclip", new OarSettings());
             var sawFalseDrive = false;
 
@@ -140,7 +141,7 @@ namespace RowVR.Stroke.Tests
                 Assert.That(f.Pose.BladeDepth, Is.EqualTo(0f), $"blade in the water at {f.Time:F2} during the missed-finish recovery");
             }
 
-            Assert.That(sawFalseDrive, Is.True, "fixture no longer shows the missed finish; this test needs a new case");
+            Assert.That(sawFalseDrive, Is.True, "fixture no longer shows the premature catch; this test needs a new case");
         }
 
         [TestCaseSource(nameof(ErgFixtures))]

@@ -244,6 +244,13 @@ again at the end of the clip, and each pass resets the detector and the readout'
 Set **Clip Path** to choose a take, or untick the component to use the simulator. It only
 runs in the Editor and turns itself off in a headset build.
 
+**Headless: `make preview`.** Opens the scene in batch mode, enters Play Mode with the
+recording replaying, and after `PREVIEW_SECONDS` (default 16) writes PNG stills to
+`.devloop/preview/`: `eye-forward`, `eye-left`, `eye-back` from the recorded head pose, and
+`boat` from outside. About 40 s. It needs a display (it renders on the GPU) and the Editor
+must not have the project open. Like any batch Unity run it kills the adb server on exit, so
+run `make connect` afterwards if the headset was on Wi-Fi.
+
 Play Mode is configured to skip domain and scene reload, which is most of the speed. The
 cost: statics are not reset between runs, so anything static needs
 `[RuntimeInitializeOnLoadMethod]` to reset itself.

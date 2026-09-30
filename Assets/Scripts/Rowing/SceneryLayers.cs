@@ -54,6 +54,9 @@ namespace RowVR.Rowing
         [Tooltip("RowVR/Unlit. Set by RowVR > Add Scenery; a scene reference keeps it in the build.")]
         [SerializeField] Shader unlitShader;
 
+        [Tooltip("RowVR/Illustrated (ADR-0011). Set by RowVR > Add Scenery, for the same reason.")]
+        [SerializeField] Shader illustratedShader;
+
         [Tooltip("Where the water meets the sky; also the fog colour.")]
         [SerializeField] Color horizonColour = new Color(0.72f, 0.8f, 0.86f);
 
@@ -65,8 +68,15 @@ namespace RowVR.Rowing
         /// <summary>Metres the boat has travelled. Scenery positions itself from this.</summary>
         public double Distance { get; private set; }
 
-        /// <summary>Boat speed, m/s. The speed model will set this; until then, the stand-in boat.</summary>
+        /// <summary>Boat speed, m/s. BoatMotion sets it from the boat model; without it, the stand-in boat.</summary>
         public float Speed { get; set; }
+
+        /// <summary>Whether the stand-in boat drives Speed. BoatMotion turns it off.</summary>
+        public bool UseDebugSpeed
+        {
+            get => useDebugSpeed;
+            set => useDebugSpeed = value;
+        }
 
         /// <summary>
         /// Level unit vector the rower faces, fixed once the rower's hands are first seen. The
@@ -80,7 +90,15 @@ namespace RowVR.Rowing
         /// <summary>Height of the water surface. OarsView keeps it matched to its oarlocks.</summary>
         public float WaterHeight { get; set; } = 0.55f;
 
-        public Color HorizonColour => horizonColour;
+        public Color HorizonColour => Palette != null ? Palette.skyHorizon : horizonColour;
+
+        /// <summary>The illustrated shader, or null in a scene set up before ADR-0011.</summary>
+        public Shader IllustratedShader => illustratedShader;
+
+        ScenePalette _palette;
+
+        /// <summary>The scene's colours, if a ScenePalette sits beside this component.</summary>
+        public ScenePalette Palette => _palette != null ? _palette : (_palette = GetComponent<ScenePalette>());
 
         public Transform Near => Root(ref _near, "Near");
         public Transform Middle => Root(ref _middle, "Middle");

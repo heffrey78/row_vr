@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.72, g: 0.8, b: 0.86, a: 1}
+  m_FogColor: {r: 0.96, g: 0.91, b: 0.8, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.01
   m_LinearFogStart: 150
@@ -551,6 +551,11 @@ GameObject:
   - component: {fileID: 1483306197}
   - component: {fileID: 1483306198}
   - component: {fileID: 1483306199}
+  - component: {fileID: 1483306203}
+  - component: {fileID: 1483306202}
+  - component: {fileID: 1483306201}
+  - component: {fileID: 1483306200}
+  - component: {fileID: 1483306204}
   m_Layer: 0
   m_Name: Rowing Rig
   m_TagString: Untagged
@@ -586,8 +591,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.StrokeReadout
   logToConsole: 1
-  drawOnScreen: 1
-  drawInWorld: 1
+  drawOnScreen: 0
+  drawInWorld: 0
   worldPanelOffset: {x: 0, y: -0.2, z: 1.5}
 --- !u!114 &1483306193
 MonoBehaviour:
@@ -635,7 +640,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.ClipPlayback
   clipPath: tests/RowVR.Stroke.Tests/fixtures/real-erg-steady-12strokes-20260927.rowclip
   loop: 1
-  showHands: 1
+  showHands: 0
   keepTrackingGaps: 1
 --- !u!114 &1483306196
 MonoBehaviour:
@@ -666,13 +671,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5a401d05e204f4b842f64e70a1652df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.OarsView
-  oarlockSpread: 0.8
   inboard: 0.88
   outboard: 2
-  waterBelowOarlock: 0.25
   buriedDepth: 0.08
   clearance: 0.12
-  frameFollowSeconds: 4
+  gatePlay: 0.06
   maxSweepDegreesPerSecond: 600
   showWater: 1
 --- !u!114 &1483306198
@@ -705,6 +708,87 @@ MonoBehaviour:
   sideOffset: 1.2
   belowHead: 0.6
   logSounds: 1
+--- !u!114 &1483306200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 314a7fd385921dbd7b7769a3015f211f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.MetricsPanel
+  font: {fileID: 12800000, guid: a70530211bbe4001b2c57187a89779df, type: 3}
+  textShader: {fileID: 4800000, guid: 3ab63c2bcb86422ca620d145e76b72b3, type: 3}
+  towardStern: 1.15
+  toRight: 0.62
+  belowEyes: 0.18
+--- !u!114 &1483306201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 086b802b764141e0815eb11ad4cd70e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.BoatMotion
+  resistance: 5
+--- !u!114 &1483306202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 696bdbde4baf4dc69889ecd6a89a1621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.BoatHullView
+  sternReach: 2.6
+  bowReach: 5.2
+  beam: 0.29
+  freeboard: 0.06
+  draft: 0.11
+  widestAt: -0.6
+--- !u!114 &1483306203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17cb4b8c20e348acafc309d7192af320, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.BoatFrame
+  oarlockSpread: 0.8
+  waterBelowOarlock: 0.25
+  oarlockSetBack: 0.1
+  followSeconds: 4
+--- !u!114 &1483306204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4fdffc346f24046b3ecf294b42c72a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.Soundscape
+  lapping: 0.28
+  wind: 0.12
+  hullAtSpeed: 0.35
+  birds: 0.45
+  birdInterval: {x: 5, y: 14}
 --- !u!1 &1523737649
 GameObject:
   m_ObjectHideFlags: 0
@@ -1045,6 +1129,7 @@ GameObject:
   - component: {fileID: 2056553444}
   - component: {fileID: 2056553443}
   - component: {fileID: 2056553442}
+  - component: {fileID: 2056553447}
   m_Layer: 0
   m_Name: Scenery
   m_TagString: Untagged
@@ -1067,11 +1152,6 @@ MonoBehaviour:
   bankDistance: 60
   buoyLine: 7
   buoySpacing: 12.5
-  grass: {r: 0.33, g: 0.45, b: 0.24, a: 1}
-  bankFace: {r: 0.36, g: 0.33, b: 0.24, a: 1}
-  trees: {r: 0.14, g: 0.27, b: 0.15, a: 1}
-  buoyA: {r: 0.95, g: 0.45, b: 0.1, a: 1}
-  buoyB: {r: 0.95, g: 0.95, b: 0.92, a: 1}
 --- !u!114 &2056553443
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1084,7 +1164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31e4505e771148f59744d1cc4b8a8e06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.WaterSurface
-  tileSize: 4
+  tileSize: 7
   halfSize: 880
   deepColour: {r: 0.1, g: 0.24, b: 0.34, a: 1}
   lightColour: {r: 0.32, g: 0.47, b: 0.56, a: 1}
@@ -1100,8 +1180,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 058137a39edf4a09aa25d06d62e32359, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.SkyDome
-  zenithColour: {r: 0.28, g: 0.48, b: 0.78, a: 1}
   radius: 900
+  sunAzimuth: -35
+  sunElevation: 11
+  clouds: 9
+  birds: 5
 --- !u!114 &2056553445
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1123,6 +1206,7 @@ MonoBehaviour:
   debugDeceleration: 0.35
   useDebugSpeed: 1
   unlitShader: {fileID: 4800000, guid: 0cf8c9f7c22d4545bd312532499cfb4e, type: 3}
+  illustratedShader: {fileID: 4800000, guid: 7b3ad498d58246dc94ddd52cb7dc832f, type: 3}
   horizonColour: {r: 0.72, g: 0.8, b: 0.86, a: 1}
 --- !u!4 &2056553446
 Transform:
@@ -1139,6 +1223,45 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2056553447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056553441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 480b1762134541879eef92a3515e8949, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.ScenePalette
+  skyZenith: {r: 0.55, g: 0.7, b: 0.84, a: 1}
+  skyHorizon: {r: 0.96, g: 0.91, b: 0.8, a: 1}
+  horizonGlow: {r: 0.98, g: 0.8, b: 0.62, a: 1}
+  cloud: {r: 1, g: 0.98, b: 0.94, a: 1}
+  cloudShade: {r: 0.86, g: 0.84, b: 0.88, a: 1}
+  sun: {r: 1, g: 0.93, b: 0.72, a: 1}
+  waterDeep: {r: 0.24, g: 0.46, b: 0.52, a: 1}
+  waterLight: {r: 0.44, g: 0.64, b: 0.66, a: 1}
+  waterDash: {r: 0.9, g: 0.94, b: 0.9, a: 1}
+  reflection: {r: 0.2, g: 0.34, b: 0.34, a: 1}
+  hillFar: {r: 0.66, g: 0.72, b: 0.8, a: 1}
+  hillMiddle: {r: 0.5, g: 0.6, b: 0.62, a: 1}
+  hillNear: {r: 0.4, g: 0.52, b: 0.44, a: 1}
+  bank: {r: 0.52, g: 0.6, b: 0.38, a: 1}
+  treeDark: {r: 0.22, g: 0.36, b: 0.3, a: 1}
+  treeLight: {r: 0.4, g: 0.54, b: 0.36, a: 1}
+  reeds: {r: 0.62, g: 0.64, b: 0.38, a: 1}
+  hull: {r: 0.93, g: 0.9, b: 0.82, a: 1}
+  deck: {r: 0.72, g: 0.52, b: 0.34, a: 1}
+  rigger: {r: 0.36, g: 0.38, b: 0.42, a: 1}
+  oarShaft: {r: 0.92, g: 0.88, b: 0.78, a: 1}
+  blade: {r: 0.84, g: 0.36, b: 0.26, a: 1}
+  buoyA: {r: 0.95, g: 0.55, b: 0.28, a: 1}
+  buoyB: {r: 0.97, g: 0.95, b: 0.88, a: 1}
+  ink: {r: 0.17, g: 0.14, b: 0.16, a: 1}
+  shadeTint: {r: 0.66, g: 0.68, b: 0.82, a: 1}
+  paper: {r: 0.97, g: 0.94, b: 0.86, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

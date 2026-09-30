@@ -4,46 +4,37 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// Two sculling oars held in the rower's hands (REQ-0002-FUNC).
+    /// Two sculling oars held in the rower's hands (REQ-0002-FUNC), turning in swivel gates on
+    /// the boat's riggers.
     ///
     /// While a stroke is being tracked, each oar's handle end is at the rower's hand: left
-    /// hand, left oar. The oar swings about a fixed oarlock along the line from the hand
-    /// through the oarlock, so the sweep is the rower's own motion. Blade depth comes from
-    /// <see cref="OarKinematics"/>, which is tested against the rowing-machine recordings:
-    /// on the machine the hands barely rise or fall, so hand height cannot drive the blade.
-    /// A straight oar through an oarlock fixed in height cannot satisfy both at once, so the
-    /// pivot rides up and down to sit on the straight line from the hand to the blade. There
-    /// is no boat or oarlock drawn yet, so nothing shows the pivot moving.
+    /// hand, left oar. The oar swings about its oarlock along the line from the hand through
+    /// the oarlock, so the sweep is the rower's own motion. Blade depth comes from
+    /// <see cref="OarKinematics"/>, which is tested against the rowing-machine recordings: on
+    /// the machine the hands barely rise or fall, so hand height cannot drive the blade.
+    ///
+    /// A straight oar cannot pass through a pivot fixed in height, meet the hand and put the
+    /// blade at the right depth all at once. So the oar rides up and down in a tall gate, as
+    /// a real oar has a little play in its gate. It stays one straight line from the hand to
+    /// the blade, and where that line would leave the gate, the blade gives way instead.
     ///
     /// When no stroke is tracked (before the first, after a stop, after letting go) the oars
     /// leave the hands and ease to square with the blades out, so waving the hands about does
     /// not swing the oars.
     ///
-    /// The oarlocks need a boat to sit on, and there is no boat yet. So the boat frame is
-    /// inferred the way the detector infers its seat reference: its centre follows a slow
-    /// average of the hands, and its forward a slow average of the head's levelled forward.
-    /// Within a stroke the oarlocks stay put while the rower slides; over a session they
-    /// settle to wherever the rower actually sits. A real boat model can replace this later.
-    ///
-    /// "Left" and "right" are from the rower's seat. Placeholder geometry, built in code.
-    /// With SceneryLayers in the scene the oars sit in its Near layer and set its water
-    /// height; without it, a placeholder water plane shows blade depth.
+    /// The oarlocks, water height and boat direction come from <see cref="BoatFrame"/>, shared
+    /// with the hull. "Left" and "right" are from the rower's seat. The geometry is built in
+    /// code, illustrated (ADR-0011) when the scene provides the shader.
     /// </summary>
-    [RequireComponent(typeof(RowingRig))]
+    [RequireComponent(typeof(RowingRig), typeof(BoatFrame))]
     public sealed class OarsView : MonoBehaviour
     {
-        [Header("Rigging (metres)")]
-        [Tooltip("Distance from the boat's centreline to each oarlock. Sculls are rigged at ~0.8 m.")]
-        [SerializeField] float oarlockSpread = 0.8f;
-
+        [Header("Oars (metres)")]
         [Tooltip("Oar length from the oarlock to the handle end, used when the oars are at rest.")]
         [SerializeField] float inboard = 0.88f;
 
         [Tooltip("Oar length from the oarlock to the blade tip.")]
         [SerializeField] float outboard = 2.0f;
-
-        [Tooltip("Height of the water below the oarlocks.")]
-        [SerializeField] float waterBelowOarlock = 0.25f;
 
         [Tooltip("How far the blade's centre sits below the surface when fully buried.")]
         [SerializeField] float buriedDepth = 0.08f;
@@ -51,11 +42,10 @@ namespace RowVR.Rowing
         [Tooltip("How far the blade's centre clears the surface when out of the water.")]
         [SerializeField] float clearance = 0.12f;
 
-        [Header("Motion")]
-        [Tooltip("Time constant, seconds, for the boat frame to follow the rower. Long enough " +
-                 "that the oarlocks do not move with the seat during a stroke.")]
-        [SerializeField] float frameFollowSeconds = 4f;
+        [Tooltip("Half the gate's opening height: how far the oar may ride up or down at the oarlock.")]
+        [SerializeField] float gatePlay = 0.06f;
 
+        [Header("Motion")]
         [Tooltip("Fastest the drawn sweep may change, degrees per second. Above a rower's " +
                  "fastest drive, so it only smooths picking up and putting down the oars.")]
         [SerializeField] float maxSweepDegreesPerSecond = 600f;
@@ -70,17 +60,16 @@ namespace RowVR.Rowing
         {
             public Transform Inboard;   // shaft from the oarlock to the handle end
             public Transform Outboard;  // pivot at the oarlock; shaft and blade along +Z
+            public Transform Gate;      // swivels with the oar, fixed at the oarlock
             public float Sweep;         // drawn sweep, degrees, eased
         }
 
         RowingRig _rig;
+        BoatFrame _frame;
         SceneryLayers _scenery;
         readonly OarKinematics _kinematics = new OarKinematics();
         Oar _left, _right;
         Transform _water;
-        bool _hasFrame;
-        Vector3 _centre;
-        Vector3 _forward;
 
         /// <summary>The kinematic pose this frame; supplies blade depth and the rest state.</summary>
         public OarPose Pose { get; private set; }
@@ -88,19 +77,23 @@ namespace RowVR.Rowing
         void Awake()
         {
             _rig = GetComponent<RowingRig>();
+            // RequireComponent is not applied to a component already saved in a scene, and
+            // scenes from before BoatFrame have OarsView without it.
+            _frame = GetComponent<BoatFrame>();
+            if (_frame == null) _frame = gameObject.AddComponent<BoatFrame>();
+            _scenery = FindFirstObjectByType<SceneryLayers>();
             _left = CreateOar("Left Oar");
             _right = CreateOar("Right Oar");
 
-            // With scenery present, the oars belong to its Near layer and the scenery draws
-            // the water; the oars only tell it how high the water is. Without scenery, keep
-            // the placeholder so blade depth can still be judged.
-            _scenery = FindFirstObjectByType<SceneryLayers>();
+            // With scenery present, the oars belong to its Near layer and the scenery draws the
+            // water. Without it, keep a placeholder so blade depth can still be judged.
             if (_scenery != null)
             {
                 foreach (var oar in new[] { _left, _right })
                 {
                     oar.Inboard.SetParent(_scenery.Near, true);
                     oar.Outboard.SetParent(_scenery.Near, true);
+                    oar.Gate.SetParent(_scenery.Near, true);
                 }
             }
             else if (showWater)
@@ -124,72 +117,41 @@ namespace RowVR.Rowing
             foreach (var oar in new[] { _left, _right })
             {
                 if (oar == null) continue;
-                if (oar.Inboard != null) Destroy(oar.Inboard.gameObject);
-                if (oar.Outboard != null) Destroy(oar.Outboard.gameObject);
+                foreach (var t in new[] { oar.Inboard, oar.Outboard, oar.Gate })
+                    if (t != null) Destroy(t.gameObject);
             }
             if (_water != null) Destroy(_water.gameObject);
         }
 
-        // LateUpdate so the rig has already taken this frame's pose in its Update.
+        // LateUpdate so the rig has taken this frame's pose (Update) and BoatFrame has followed
+        // it (LateUpdate, earlier execution order).
         void LateUpdate()
         {
             // No pose, no new state: hold the oars where they are, as the handle does.
-            if (!_rig.IsTracking) return;
+            if (!_rig.IsTracking || !_frame.HasFrame) return;
 
             var sample = _rig.LastSample;
-            UpdateFrame(sample);
             Pose = _kinematics.Update(Time.timeAsDouble, _rig.State);
 
-            var right = Vector3.Cross(Vector3.up, _forward);
-            var oarlockY = _centre.y;
-            var waterY = oarlockY - waterBelowOarlock;
+            var waterY = _frame.WaterHeight;
             var bladeY = Mathf.Lerp(waterY + clearance, waterY - buriedDepth, Pose.BladeDepth);
 
-            PlaceOar(_left, -right, sample.LeftHand.ToVector3(), oarlockY, bladeY);
-            PlaceOar(_right, right, sample.RightHand.ToVector3(), oarlockY, bladeY);
+            PlaceOar(_left, -1, sample.LeftHand.ToVector3(), bladeY);
+            PlaceOar(_right, 1, sample.RightHand.ToVector3(), bladeY);
 
-            if (_water != null) _water.position = new Vector3(_centre.x, waterY, _centre.z);
-            if (_scenery != null) _scenery.WaterHeight = waterY;
+            if (_water != null) _water.position = new Vector3(_frame.Centre.x, waterY, _frame.Centre.z);
             SetVisible(true);
         }
 
-        void UpdateFrame(HandSample sample)
+        void PlaceOar(Oar oar, int side, Vector3 hand, float bladeY)
         {
-            var hands = ((sample.LeftHand + sample.RightHand) * 0.5f).ToVector3();
-            var forward = sample.HeadForward.ToVector3();
-            forward.y = 0f;
-            if (forward.sqrMagnitude < 1e-6f) forward = _hasFrame ? _forward : Vector3.forward;
-            forward.Normalize();
+            var outward = _frame.Right * side;
+            var forward = _frame.Forward;
+            var oarlock = _frame.Oarlock(side);
 
-            if (!_hasFrame)
-            {
-                _centre = hands;
-                _forward = forward;
-                _hasFrame = true;
-                return;
-            }
-
-            var alpha = 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.01f, frameFollowSeconds));
-            _centre = Vector3.Lerp(_centre, hands, alpha);
-            _forward = Vector3.Slerp(_forward, forward, alpha).normalized;
-        }
-
-        void PlaceOar(Oar oar, Vector3 outward, Vector3 hand, float oarlockY, float bladeY)
-        {
-            // The frame centre is the average hand position. A sculler's catch reaches
-            // further past the oarlock than the finish comes back behind it, so set the
-            // oarlocks back by the average of the two, keeping the sweep close to the
-            // kinematic catch and finish angles.
-            var s = _kinematics.Settings;
-            var handleAhead = inboard * 0.5f *
-                (Mathf.Sin(s.CatchAngleDegrees * Mathf.Deg2Rad) + Mathf.Sin(s.FinishAngleDegrees * Mathf.Deg2Rad));
-            var oarlock = new Vector3(_centre.x, oarlockY, _centre.z)
-                          - _forward * handleAhead
-                          + outward * oarlockSpread;
-
-            // Held: sweep is the line from the hand through the oarlock. At rest: the
-            // kinematic sweep, which eases to square. Either way the drawn sweep is rate
-            // limited, which is what smooths picking the oars up and putting them down.
+            // Held: sweep is the line from the hand through the oarlock. At rest: the kinematic
+            // sweep, which eases to square. Either way the drawn sweep is rate limited, which is
+            // what smooths picking the oars up and putting them down.
             var held = !Pose.Resting;
             var target = Pose.SweepDegrees;
             if (held)
@@ -197,17 +159,17 @@ namespace RowVR.Rowing
                 var toBlade = oarlock - hand;
                 toBlade.y = 0f;
                 if (toBlade.sqrMagnitude > 1e-4f)
-                    target = Mathf.Atan2(-Vector3.Dot(toBlade, _forward), Vector3.Dot(toBlade, outward)) * Mathf.Rad2Deg;
+                    target = Mathf.Atan2(-Vector3.Dot(toBlade, forward), Vector3.Dot(toBlade, outward)) * Mathf.Rad2Deg;
             }
             oar.Sweep = Mathf.MoveTowards(oar.Sweep, target, maxSweepDegreesPerSecond * Time.deltaTime);
 
-            // Horizontal direction from the oarlock to the blade. At the catch (positive
-            // sweep) the blade reaches back, away from the rower's forward.
+            // Horizontal direction from the oarlock to the blade. At the catch (positive sweep)
+            // the blade reaches back, away from the rower's forward.
             var sweep = oar.Sweep * Mathf.Deg2Rad;
-            var flat = outward * Mathf.Cos(sweep) - _forward * Mathf.Sin(sweep);
+            var flat = outward * Mathf.Cos(sweep) - forward * Mathf.Sin(sweep);
 
             var reach = outboard - BladeLength * 0.5f;
-            var drop = Mathf.Clamp(bladeY - oarlockY, -reach * 0.9f, reach * 0.9f);
+            var drop = Mathf.Clamp(bladeY - oarlock.y, -reach * 0.9f, reach * 0.9f);
             var along = (flat * Mathf.Sqrt(reach * reach - drop * drop) + Vector3.up * drop).normalized;
             var pivot = oarlock;
 
@@ -216,10 +178,9 @@ namespace RowVR.Rowing
             var inHand = held && Mathf.Abs(oar.Sweep - target) < 0.5f;
             if (inHand)
             {
-                // Keep the oar straight from the hand to the blade. A pivot fixed in height
-                // would bend it wherever the hand's height and the blade's depth disagree,
-                // which is most of the stroke. There is no boat or oarlock drawn yet, so the
-                // pivot rides up and down the few centimetres needed to sit on that line.
+                // One straight line from the hand to where the blade should be, crossing the
+                // oarlock's upright where the gate is. Outside the gate's play, keep the pivot
+                // at the edge of the gate and let the blade depth give way instead.
                 var bladeCentre = oarlock + along * reach;
                 var line = bladeCentre - hand;
                 var inboardFlat = Vector3.ProjectOnPlane(oarlock - hand, Vector3.up).magnitude;
@@ -227,7 +188,8 @@ namespace RowVR.Rowing
                 if (totalFlat > 1e-3f)
                 {
                     pivot = hand + line * Mathf.Clamp01(inboardFlat / totalFlat);
-                    along = line.normalized;
+                    pivot.y = Mathf.Clamp(pivot.y, oarlock.y - gatePlay, oarlock.y + gatePlay);
+                    along = (pivot - hand).normalized;
                 }
             }
             oar.Outboard.SetPositionAndRotation(pivot, Quaternion.LookRotation(along, Vector3.up));
@@ -240,39 +202,64 @@ namespace RowVR.Rowing
                 Quaternion.FromToRotation(Vector3.up, toHandle / length));
             // A unit cylinder is 2 units long along Y.
             oar.Inboard.localScale = new Vector3(ShaftDiameter, length * 0.5f, ShaftDiameter);
+
+            // The gate stays at the oarlock and swivels to face along the oar.
+            oar.Gate.SetPositionAndRotation(oarlock, Quaternion.LookRotation(flat, Vector3.up));
         }
 
         Oar CreateOar(string name)
         {
-            var shaftColour = new Color(0.9f, 0.9f, 0.85f);
+            var palette = _scenery != null ? _scenery.Palette : null;
+            var shaftColour = palette != null ? palette.oarShaft : new Color(0.9f, 0.9f, 0.85f);
+            var bladeColour = palette != null ? palette.blade : new Color(0.8f, 0.2f, 0.15f);
+            var metal = palette != null ? palette.rigger : new Color(0.35f, 0.37f, 0.4f);
 
-            var inboardShaft = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            inboardShaft.name = name + " Inboard";
-            Destroy(inboardShaft.GetComponent<Collider>());
-            inboardShaft.GetComponent<Renderer>().material.color = shaftColour;
+            var inboardShaft = Part(PrimitiveType.Cylinder, name + " Inboard", null, shaftColour, 0.004f);
 
             // Outboard: a pivot at the oarlock with its local +Z toward the blade.
             var outboardPivot = new GameObject(name).transform;
 
-            var shaft = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            shaft.name = "Shaft";
-            Destroy(shaft.GetComponent<Collider>());
-            shaft.transform.SetParent(outboardPivot, false);
-            shaft.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            shaft.transform.localPosition = new Vector3(0f, 0f, outboard * 0.5f);
-            shaft.transform.localScale = new Vector3(ShaftDiameter, outboard * 0.5f, ShaftDiameter);
-            shaft.GetComponent<Renderer>().material.color = shaftColour;
+            var shaft = Part(PrimitiveType.Cylinder, "Shaft", outboardPivot, shaftColour, 0.004f);
+            shaft.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            shaft.localPosition = new Vector3(0f, 0f, outboard * 0.5f);
+            shaft.localScale = new Vector3(ShaftDiameter, outboard * 0.5f, ShaftDiameter);
 
-            var blade = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            blade.name = "Blade";
-            Destroy(blade.GetComponent<Collider>());
-            blade.transform.SetParent(outboardPivot, false);
-            blade.transform.localPosition = new Vector3(0f, 0f, outboard - BladeLength * 0.5f);
+            var blade = Part(PrimitiveType.Cube, "Blade", outboardPivot, bladeColour, 0.006f);
+            blade.localPosition = new Vector3(0f, 0f, outboard - BladeLength * 0.5f);
             // Squared: the broad face is upright and faces along the boat.
-            blade.transform.localScale = new Vector3(0.02f, BladeHeight, BladeLength);
-            blade.GetComponent<Renderer>().material.color = new Color(0.8f, 0.2f, 0.15f);
+            blade.localScale = new Vector3(0.02f, BladeHeight, BladeLength);
 
-            return new Oar { Inboard = inboardShaft.transform, Outboard = outboardPivot };
+            // The gate: a tall U the oar rides in, open at the top, facing along the oar
+            // (local +Z). Its height is the play the oar is allowed at the oarlock.
+            var gate = new GameObject(name + " Gate").transform;
+            var height = gatePlay * 2f + 0.03f;
+            foreach (var x in new[] { -0.035f, 0.035f })
+            {
+                var post = Part(PrimitiveType.Cube, "Post", gate, metal, 0.003f);
+                post.localPosition = new Vector3(x, 0f, 0f);
+                post.localScale = new Vector3(0.012f, height, 0.04f);
+            }
+            var sill = Part(PrimitiveType.Cube, "Sill", gate, metal, 0.003f);
+            sill.localPosition = new Vector3(0f, -height * 0.5f, 0f);
+            sill.localScale = new Vector3(0.082f, 0.012f, 0.04f);
+            var keeper = Part(PrimitiveType.Cube, "Keeper", gate, metal, 0.003f);
+            keeper.localPosition = new Vector3(0f, height * 0.5f, 0f);
+            keeper.localScale = new Vector3(0.082f, 0.012f, 0.04f);
+
+            return new Oar { Inboard = inboardShaft, Outboard = outboardPivot, Gate = gate };
+        }
+
+        Transform Part(PrimitiveType type, string name, Transform parent, Color colour, float inkWidth)
+        {
+            var part = GameObject.CreatePrimitive(type);
+            part.name = name;
+            Destroy(part.GetComponent<Collider>());
+            if (parent != null) part.transform.SetParent(parent, false);
+            if (_scenery != null && _scenery.IllustratedShader != null)
+                IllustratedMaterials.Apply(_scenery, part, colour, true, inkWidth);
+            else
+                part.GetComponent<Renderer>().material.color = colour;
+            return part.transform;
         }
 
         void SetVisible(bool visible)
@@ -282,6 +269,7 @@ namespace RowVR.Rowing
                 if (oar == null) continue;
                 SetActive(oar.Inboard, visible);
                 SetActive(oar.Outboard, visible);
+                SetActive(oar.Gate, visible);
             }
             SetActive(_water, visible);
         }
