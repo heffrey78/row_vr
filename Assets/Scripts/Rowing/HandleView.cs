@@ -63,6 +63,10 @@ namespace RowVR.Rowing
             // A unit cylinder is 2 units tall along its Y axis, hence the half length.
             _handle.localScale = new Vector3(diameter, length * 0.5f, diameter);
 
+            // With scenery present, the handle belongs to its Near layer (ADR-0008).
+            var scenery = FindFirstObjectByType<SceneryLayers>();
+            if (scenery != null) _handle.SetParent(scenery.Near, true);
+
             _renderer = handle.GetComponent<Renderer>();
             _renderer.material.color = liveColor;
             _renderer.enabled = false;
