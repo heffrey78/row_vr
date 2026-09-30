@@ -18,9 +18,10 @@ namespace RowVR.Rowing
     /// catch to wait would ruin the timing, so that is accepted. What is suppressed is the
     /// finish: one only sounds for a drive whose catch was heard and not taken back.
     ///
-    /// The sounds are placeholders synthesised in code: no licensing question and no binary
-    /// asset in LFS until real recordings replace them. They play from either side of the
-    /// rower, roughly where the blades are, so they are spatialised.
+    /// The sounds are synthesised by SoundSynth (engine-free, tested): a "blup", splash and
+    /// droplets at the catch, a swirl and drips at the finish, several takes of each so
+    /// strokes do not repeat identically. Nothing to license, no binary asset. They play
+    /// from either side of the rower, roughly where the blades are, so they are spatialised.
     /// </summary>
     [RequireComponent(typeof(RowingRig))]
     public sealed class StrokeAudio : MonoBehaviour
@@ -35,11 +36,10 @@ namespace RowVR.Rowing
         [Tooltip("Log each sound, for checking sound counts against the recordings in Play Mode.")]
         [SerializeField] bool logSounds;
 
-        const int SampleRate = 48000;
-
         RowingRig _rig;
         AudioSource _left, _right;
-        AudioClip _catchClip, _finishClip;
+        AudioClip[] _catchClips, _finishClips;
+        readonly System.Random _variety = new System.Random(11);
         bool _catchOpen;
 
         /// <summary>Sounds played since startup, for tests and diagnostics.</summary>
@@ -49,8 +49,14 @@ namespace RowVR.Rowing
         void Awake()
         {
             _rig = GetComponent<RowingRig>();
-            _catchClip = SynthesiseCatch();
-            _finishClip = SynthesiseFinish();
+            // Several takes of each, so no two strokes in a row sound identical.
+            _catchClips = new AudioClip[4];
+            _finishClips = new AudioClip[4];
+            for (var i = 0; i < 4; i++)
+            {
+                _catchClips[i] = Clip("Catch " + i, SoundSynth.Catch(100 + i));
+                _finishClips[i] = Clip("Finish " + i, SoundSynth.Finish(200 + i));
+            }
             _left = CreateSource("Stroke Audio Left");
             _right = CreateSource("Stroke Audio Right");
         }
@@ -92,7 +98,7 @@ namespace RowVR.Rowing
         void OnCatch(StrokeMetrics metrics)
         {
             _catchOpen = true;
-            Play(_catchClip, catchVolume);
+            Play(_catchClips[_variety.Next(_catchClips.Length)], catchVolume);
             CatchSounds++;
             if (logSounds) Debug.Log($"[RowVR] sound: catch #{CatchSounds}");
         }
@@ -101,7 +107,7 @@ namespace RowVR.Rowing
         {
             if (!_catchOpen) return;
             _catchOpen = false;
-            Play(_finishClip, finishVolume);
+            Play(_finishClips[_variety.Next(_finishClips.Length)], finishVolume);
             FinishSounds++;
             if (logSounds) Debug.Log($"[RowVR] sound: finish #{FinishSounds}");
         }
@@ -129,59 +135,10 @@ namespace RowVR.Rowing
             return source;
         }
 
-        /// <summary>
-        /// A splash: noise through a low-pass filter whose cutoff falls from bright to dull,
-        /// over a short low thump, with a sharp attack and a fast decay.
-        /// </summary>
-        static AudioClip SynthesiseCatch()
+        static AudioClip Clip(string name, float[] samples)
         {
-            const float seconds = 0.18f;
-            var data = new float[(int)(SampleRate * seconds)];
-            var random = new System.Random(1);
-            var lowPassed = 0f;
-            for (var i = 0; i < data.Length; i++)
-            {
-                var t = (float)i / SampleRate;
-                var cutoff = Mathf.Lerp(2500f, 500f, t / seconds);
-                lowPassed += OnePoleCoefficient(cutoff) * (Noise(random) - lowPassed);
-                var splash = lowPassed * 2.5f * Envelope(t, 0.003f, 0.05f);
-                var thump = Mathf.Sin(2f * Mathf.PI * 110f * t) * 0.5f * Envelope(t, 0.002f, 0.025f);
-                data[i] = Mathf.Clamp(splash + thump, -1f, 1f);
-            }
-            return Clip("Catch (synthesised)", data);
-        }
-
-        /// <summary>A swish: the high part of the noise, softer and shorter.</summary>
-        static AudioClip SynthesiseFinish()
-        {
-            const float seconds = 0.12f;
-            var data = new float[(int)(SampleRate * seconds)];
-            var random = new System.Random(2);
-            var lowPassed = 0f;
-            var a = OnePoleCoefficient(1500f);
-            for (var i = 0; i < data.Length; i++)
-            {
-                var t = (float)i / SampleRate;
-                var noise = Noise(random);
-                lowPassed += a * (noise - lowPassed);
-                data[i] = Mathf.Clamp((noise - lowPassed) * 0.6f * Envelope(t, 0.01f, 0.035f), -1f, 1f);
-            }
-            return Clip("Finish (synthesised)", data);
-        }
-
-        static float Noise(System.Random random) => (float)(random.NextDouble() * 2d - 1d);
-
-        /// <summary>Linear attack, then exponential decay with time constant <paramref name="decay"/>.</summary>
-        static float Envelope(float t, float attack, float decay) =>
-            t < attack ? t / attack : Mathf.Exp(-(t - attack) / decay);
-
-        static float OnePoleCoefficient(float cutoffHz) =>
-            1f - Mathf.Exp(-2f * Mathf.PI * cutoffHz / SampleRate);
-
-        static AudioClip Clip(string name, float[] data)
-        {
-            var clip = AudioClip.Create(name, data.Length, 1, SampleRate, false);
-            clip.SetData(data, 0);
+            var clip = AudioClip.Create(name, samples.Length, 1, SoundSynth.SampleRate, false);
+            clip.SetData(samples, 0);
             return clip;
         }
     }
