@@ -54,6 +54,14 @@ namespace RowVR.Rowing
         }
 
         /// <summary>
+        /// Vertex colours reach the shader as-is, unlike material and texture colours, which
+        /// Unity converts. The project renders in Linear space, so convert them here or every
+        /// authored colour comes out washed out.
+        /// </summary>
+        internal static Color ToVertexColour(Color authored) =>
+            QualitySettings.activeColorSpace == ColorSpace.Linear ? authored.linear : authored;
+
+        /// <summary>
         /// A unit sphere with inward-facing triangles, coloured by latitude: the zenith colour
         /// at the top, easing to the horizon colour at the horizon, and flat below it.
         /// </summary>
@@ -74,7 +82,7 @@ namespace RowVR.Rowing
                     var angle = 2f * Mathf.PI * s / Segments;
                     var i = r * (Segments + 1) + s;
                     vertices[i] = new Vector3(Mathf.Cos(angle) * ring, y, Mathf.Sin(angle) * ring);
-                    colours[i] = colour;
+                    colours[i] = ToVertexColour(colour);
                 }
             }
 

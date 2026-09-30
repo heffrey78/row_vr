@@ -184,7 +184,7 @@ namespace RowVR.Rowing
             int Add(Vector3 position, Color colour)
             {
                 _vertices.Add(position);
-                _colours.Add(colour);
+                _colours.Add(SkyDome.ToVertexColour(colour));
                 return _vertices.Count - 1;
             }
 
