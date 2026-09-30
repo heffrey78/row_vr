@@ -105,6 +105,20 @@ namespace RowVR.Rowing
             return true;
         }
 
+        /// <summary>
+        /// The index fingertip of one hand, in world space, for pressing menu buttons (ADR-0013).
+        /// Uses whichever subsystem the palms came from; false if that hand is not tracked.
+        /// </summary>
+        public bool TryGetFingertip(bool left, out Vector3 worldPosition)
+        {
+            worldPosition = default;
+            if (_subsystem == null || !_subsystem.running) return false;
+            var hand = left ? _subsystem.leftHand : _subsystem.rightHand;
+            if (!hand.isTracked || !hand.GetJoint(XRHandJointID.IndexTip).TryGetPose(out var pose)) return false;
+            worldPosition = _trackingOrigin != null ? _trackingOrigin.TransformPoint(pose.position) : pose.position;
+            return true;
+        }
+
         bool TryGetPalm(XRHand hand, out Vector3 worldPosition)
         {
             worldPosition = default;

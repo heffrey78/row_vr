@@ -31,6 +31,10 @@ namespace RowVR.Rowing
         public BoatModel Boat { get; private set; }
         public SessionStats Session { get; private set; }
 
+        /// <summary>The chosen workout's progress; restarts with each new session.</summary>
+        public WorkoutProgress Workout { get; private set; }
+        bool _wasActive;
+
         public int Resistance
         {
             get => resistance;
@@ -43,6 +47,9 @@ namespace RowVR.Rowing
             _scenery = FindFirstObjectByType<SceneryLayers>();
             Boat = new BoatModel();
             Session = new SessionStats();
+            // The menu's saved choices (REQ-0008); the Inspector value is only the first default.
+            if (UnityEngine.PlayerPrefs.HasKey("rowvr.resistance")) resistance = RowerSettings.Resistance;
+            Workout = new WorkoutProgress(RowerSettings.Workout);
             if (_scenery != null && driveScenery) _scenery.UseDebugSpeed = false;
         }
 
@@ -61,6 +68,11 @@ namespace RowVR.Rowing
                 Boat.Glide(t);
                 Session.Tick(t, Boat.Distance);
             }
+
+            // A new session starts the chosen workout afresh.
+            if (Session.Active && !_wasActive) Workout = new WorkoutProgress(RowerSettings.Workout);
+            _wasActive = Session.Active;
+            if (Session.Active) Workout.Update(Session.ElapsedSeconds, Session.DistanceMetres);
 
             if (_scenery != null && driveScenery) _scenery.Speed = Boat.VisibleSpeed;
         }
