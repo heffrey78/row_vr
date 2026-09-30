@@ -14,6 +14,9 @@ Apps created after 2026-03-01 must ship `targetSdkVersion 34`.
 ## Stack
 
 Unity OpenXR + `com.unity.xr.hands` + XR Interaction Toolkit is the **primary** stack.
+Rendering is **URP**, configured for Quest from code in `Assets/Editor/RenderPipelineBootstrap.cs`
+(ADR-0009): no post-processing, no HDR, no depth texture. New shaders are URP-only and must
+carry the single-pass-instanced stereo macros, or they render in one eye.
 Meta XR Core SDK is layered in as OpenXR *features* (passthrough, wide-motion-mode hand
 tracking, FFR) — **not** via `OVRCameraRig` / Building Blocks.
 
@@ -36,7 +39,10 @@ adapter layer instead.
 ## Loops
 
 - Tier 1 `make test` — engine-free, ~2s. Default here.
-- Tier 2 Unity Play Mode + XR Interaction Simulator — ~5s, no headset.
+- Tier 2 Unity Play Mode, replaying a recorded take (ClipPlayback) or the XR Interaction
+  Simulator — ~5s, no headset. `make preview` runs it headless and writes PNG stills
+  (rower's eye and outside the boat) to `.devloop/preview/`, so the scene can be checked
+  without anyone at the Editor. Needs a display; the Editor must not have the project open.
 - Tier 3 `make dev` — IL2CPP arm64 APK, 2–8 min, needs the headset. Ground truth.
 
 Prefer Tier 1. Reach for Tier 3 only for tracking fidelity, perf and comfort.

@@ -3,11 +3,13 @@
 A rowing app for Meta Quest 3, driven by **hand tracking** (no controllers).
 Unity 6, OpenXR, developed on **Linux**.
 
-Status: **stroke detection runs on a Quest 3** from real hand tracking, and is tested
-against recordings from a rowing machine. The Linux dev loop is verified on hardware,
-apart from tier 2 (Play Mode with simulated hands), which hasn't been run yet. No
-gameplay yet. See [`docs/dev-loop.md` §7](docs/dev-loop.md#7-verification-checklist) for
-what has been verified.
+Status: **becoming a rowing app.** Verified on a Quest 3 on the rower's own machine: hand
+tracking counts strokes, two oars sweep in the rower's hands, and sounds mark the catch and
+finish. Built and checked in headless previews (`make preview`), but **not yet seen in the
+headset**: an illustrated lake (sky, hills, trees, water) that passes at a speed from a boat
+model, a scull with riggers, a hand-lettered card with time, pace and distance, and an ambient
+soundscape. Roadmapped: a forward-facing rapids scene (REQ-0007) and passthrough when the
+rower lets go (REQ-0005).
 
 ## Why this repo looks the way it does
 
