@@ -110,6 +110,26 @@ namespace RowVR.Stroke
             return Normalise(Loop(rush), 0.6f);
         }
 
+        /// <summary>
+        /// White water: a low roar under a bright hiss, churning. Loops; its level follows the
+        /// current.
+        /// </summary>
+        public static float[] Rapids(float seconds, int seed)
+        {
+            var random = new Random(seed);
+            var n = Samples(seconds) + Samples(LoopFade);
+            var low = BandPass(Noise(n, random), 320f, 0.5f);
+            var high = BandPass(Noise(n, random), 1900f, 0.7f);
+            var output = new float[n];
+            for (var i = 0; i < n; i++)
+            {
+                var t = i / (double)SampleRate;
+                var churn = 0.75 + 0.25 * Math.Sin(2 * Math.PI * 0.6 * t) * Math.Sin(2 * Math.PI * 1.7 * t + 1.3);
+                output[i] = (float)((low[i] * 1.4 + high[i] * 0.6) * churn);
+            }
+            return Normalise(Loop(output), 0.75f);
+        }
+
         /// <summary>Number of bird species <see cref="Bird"/> knows.</summary>
         public const int BirdSpecies = 4;
 

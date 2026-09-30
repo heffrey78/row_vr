@@ -39,6 +39,10 @@ namespace RowVR.Rowing
         [SerializeField] LayerMode sky = LayerMode.Virtual;
 
         [Header("Travel")]
+        [Tooltip("Off for the lake: the rower faces the stern and scenery recedes in front of them. " +
+                 "On for the rapids: the rower faces downstream and scenery comes toward them (ADR-0012).")]
+        [SerializeField] bool facingTravel;
+
         [Tooltip("Stand-in boat speed while rowing, m/s, until the speed model drives it. " +
                  "3.5 m/s is a 2:23 split. 0 keeps the scenery still.")]
         [SerializeField] float debugSpeed = 3.5f;
@@ -67,6 +71,22 @@ namespace RowVR.Rowing
 
         /// <summary>Metres the boat has travelled. Scenery positions itself from this.</summary>
         public double Distance { get; private set; }
+
+        /// <summary>
+        /// Distance as the rower sees it move: positive carries scenery toward the rower's front
+        /// (the lake, facing the stern), negative brings it toward them (the rapids, facing
+        /// downstream). Scenery places itself from this, not from Distance.
+        /// </summary>
+        public double ViewDistance => facingTravel ? -Distance : Distance;
+
+        /// <summary>
+        /// How far the raft has drifted off the course's line, metres, positive toward the
+        /// rower's right. Scenery shifts the opposite way; the view never turns (ADR-0012).
+        /// </summary>
+        public float LateralOffset { get; set; }
+
+        /// <summary>World-space shift every piece of scenery applies for the drift.</summary>
+        public Vector3 DriftShift => Vector3.Cross(Vector3.up, RowerForward) * -LateralOffset;
 
         /// <summary>Boat speed, m/s. BoatMotion sets it from the boat model; without it, the stand-in boat.</summary>
         public float Speed { get; set; }

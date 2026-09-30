@@ -68,6 +68,112 @@ namespace RowVR.Editor
             }
         }
 
+        const string RapidsScenePath = SceneDirectory + "/Rapids.unity";
+
+        /// <summary>
+        /// Builds Assets/Scenes/Rapids.unity (REQ-0007) from the lake scene: same rig, hands,
+        /// boat model and sky, turned to face downstream, with the river in place of the lake,
+        /// a raft in place of the scull, a handle in place of the oars, and the rapids' run,
+        /// card and sound. Rebuilds it if it exists: it is generated, not hand-edited.
+        /// Headless: -executeMethod RowVR.Editor.SceneBootstrap.CreateRapidsBatch
+        /// </summary>
+        [MenuItem("RowVR/Create Rapids Scene")]
+        public static void CreateRapids() => TryCreateRapids();
+
+        public static void CreateRapidsBatch() => EditorApplication.Exit(TryCreateRapids() ? 0 : 1);
+
+        static bool TryCreateRapids()
+        {
+            try
+            {
+                var lake = EditorSceneManager.OpenScene(ScenePath);
+                if (!EditorSceneManager.SaveScene(lake, RapidsScenePath, true)) return false;
+                var scene = EditorSceneManager.OpenScene(RapidsScenePath);
+
+                var layers = Object.FindFirstObjectByType<SceneryLayers>();
+                var rig = Object.FindFirstObjectByType<RowingRig>();
+                if (layers == null || rig == null)
+                {
+                    Debug.LogError("[RowVR] Row.unity has no scenery or rig; run Create Rowing Scene first.");
+                    return false;
+                }
+
+                // Scenery: facing downstream, the river instead of the lake.
+                var course = layers.GetComponent<CourseScenery>();
+                if (course != null) Object.DestroyImmediate(course);
+                if (layers.GetComponent<RiverScenery>() == null) layers.gameObject.AddComponent<RiverScenery>();
+                var serializedLayers = new SerializedObject(layers);
+                serializedLayers.FindProperty("facingTravel").boolValue = true;
+                serializedLayers.ApplyModifiedPropertiesWithoutUndo();
+
+                // A river palette: greener water, cooler light, the orange raft.
+                var palette = layers.GetComponent<ScenePalette>();
+                if (palette != null)
+                {
+                    palette.waterDeep = new Color(0.2f, 0.4f, 0.4f);
+                    palette.waterLight = new Color(0.36f, 0.56f, 0.52f);
+                    palette.skyHorizon = new Color(0.86f, 0.9f, 0.88f);
+                    palette.horizonGlow = new Color(0.96f, 0.86f, 0.7f);
+                    EditorUtility.SetDirty(palette);
+                }
+                // A gorge: nearer mist, which also hides where the banks wrap.
+                RenderSettings.fog = true;
+                RenderSettings.fogMode = FogMode.Linear;
+                RenderSettings.fogStartDistance = 45f;
+                RenderSettings.fogEndDistance = 330f;
+                RenderSettings.fogColor = layers.HorizonColour;
+
+                // The rower: a raft and a handle instead of a scull and oars.
+                var go = rig.gameObject;
+                foreach (var drop in new Component[] { go.GetComponent<BoatHullView>(), go.GetComponent<MetricsPanel>() })
+                    if (drop != null) Object.DestroyImmediate(drop);
+                var grip = go.GetComponent<GripDisplay>();
+                if (grip != null)
+                {
+                    var serializedGrip = new SerializedObject(grip);
+                    serializedGrip.FindProperty("mode").enumValueIndex = (int)GripDisplay.GripMode.Handle;
+                    serializedGrip.ApplyModifiedPropertiesWithoutUndo();
+                }
+                var motion = go.GetComponent<BoatMotion>();
+                if (motion != null)
+                {
+                    var serializedMotion = new SerializedObject(motion);
+                    serializedMotion.FindProperty("driveScenery").boolValue = false;
+                    serializedMotion.ApplyModifiedPropertiesWithoutUndo();
+                }
+                if (go.GetComponent<RapidsMotion>() == null) go.AddComponent<RapidsMotion>();
+                if (go.GetComponent<RaftView>() == null) go.AddComponent<RaftView>();
+                if (go.GetComponent<RapidsSound>() == null) go.AddComponent<RapidsSound>();
+                var panel = go.GetComponent<RapidsPanel>();
+                if (panel == null) panel = go.AddComponent<RapidsPanel>();
+                var serializedPanel = new SerializedObject(panel);
+                serializedPanel.FindProperty("font").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>(PanelFontPath);
+                serializedPanel.FindProperty("textShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(TextShaderPath);
+                serializedPanel.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(go);
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                if (!EditorSceneManager.SaveScene(scene)) return false;
+                RegisterScene(RapidsScenePath);
+                Debug.Log($"[RowVR] Created {RapidsScenePath}.");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+                return false;
+            }
+        }
+
+        /// <summary>Adds a scene to Build Settings after the ones already there, enabled.</summary>
+        static void RegisterScene(string path)
+        {
+            var scenes = EditorBuildSettings.scenes.ToList();
+            if (scenes.Any(s => s.path == path)) return;
+            scenes.Add(new EditorBuildSettingsScene(path, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
         /// <summary>
         /// Batch entry point: opens Row.unity, applies the scene setup that has grown since it
         /// was first built (scenery, and the bring-up geometry it replaces), and saves it.

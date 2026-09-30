@@ -65,8 +65,10 @@ namespace RowVR.Rowing
             // Fixed water drifts forward in the rower's view as the boat travels, so the
             // texture slides toward +V. The modulo happens in double so an hour's distance
             // does not cost the offset its precision.
-            var tiles = (float)(_layers.Distance / tileSize % 1d);
-            _material.SetTextureOffset("_BaseMap", new Vector2(0f, -tiles));
+            var tiles = (float)(_layers.ViewDistance / tileSize % 1d);
+            // Drift slides the water sideways with the rest of the scenery.
+            var across = _layers.LateralOffset / tileSize % 1f;
+            _material.SetTextureOffset("_BaseMap", new Vector2(across, -tiles));
         }
 
         /// <summary>A square in the XZ plane, UVs in tiles so the texture repeats every tileSize.</summary>
