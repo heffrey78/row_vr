@@ -21,6 +21,12 @@ namespace RowVR.Editor
     ///
     ///   Unity -batchmode -projectPath . -executeMethod RowVR.Editor.Preview.CaptureBatch
     ///         [-previewSeconds 16] [-previewOut .devloop/preview]
+    ///         [-previewFrames 0] [-previewFps 15]
+    ///
+    /// With -previewFrames N it also writes a sequence, frame_000.png onward, from the rower's
+    /// eye: N frames at -previewFps of game time each, whatever the machine renders at
+    /// (Time.captureFramerate), so a clip is the same every run. tools/preview.sh can turn it
+    /// into a GIF.
     ///
     /// Not -nographics: rendering needs a GPU and a display.
     /// </summary>
@@ -35,11 +41,16 @@ namespace RowVR.Editor
         static double _batchStarted;
         static float _captureAt;
         static string _outDir;
+        static int _frames;
+        static int _frameIndex;
+        static int _fps;
 
         public static void CaptureBatch()
         {
             _captureAt = FloatArg("-previewSeconds", 16f);
             _outDir = StringArg("-previewOut", ".devloop/preview");
+            _frames = (int)FloatArg("-previewFrames", 0f);
+            _fps = Math.Max(1, (int)FloatArg("-previewFps", 15f));
             Directory.CreateDirectory(_outDir);
 
             EditorSceneManager.OpenScene(ScenePath);
@@ -58,8 +69,20 @@ namespace RowVR.Editor
             }
 
             if (!EditorApplication.isPlaying) return;
-            if (_playStarted < 0) _playStarted = EditorApplication.timeSinceStartup;
+            if (_playStarted < 0)
+            {
+                _playStarted = EditorApplication.timeSinceStartup;
+                // Fixed game time per rendered frame, so a sequence plays at real speed.
+                if (_frames > 0) Time.captureFramerate = _fps;
+            }
             if (Time.timeSinceLevelLoad < _captureAt) return;
+
+            if (_frameIndex < _frames)
+            {
+                try { CaptureFrame(); }
+                catch (Exception e) { Debug.LogException(e); _frameIndex = _frames; }
+                return;
+            }
 
             EditorApplication.update -= Tick;
             var ok = false;
@@ -114,7 +137,25 @@ namespace RowVR.Editor
             return true;
         }
 
-        static void Shoot(Camera template, string name, Vector3 position, Quaternion rotation)
+        /// <summary>One frame of the sequence, from the rower's eye, looking a little to the right of the stern.</summary>
+        static void CaptureFrame()
+        {
+            var rig = UnityEngine.Object.FindFirstObjectByType<RowingRig>();
+            var layers = UnityEngine.Object.FindFirstObjectByType<SceneryLayers>();
+            var xrCamera = Camera.main;
+            if (rig == null || xrCamera == null) { _frameIndex = _frames; return; }
+            var head = rig.LastSample.HeadPosition.ToVector3();
+            var forward = layers != null ? layers.RowerForward : Vector3.forward;
+            var right = Vector3.Cross(Vector3.up, forward);
+            var look = Quaternion.LookRotation(forward + right * 0.22f + Vector3.down * 0.28f);
+            Shoot(xrCamera, $"frame_{_frameIndex:000}", head, look, 640, 360);
+            _frameIndex++;
+        }
+
+        static void Shoot(Camera template, string name, Vector3 position, Quaternion rotation) =>
+            Shoot(template, name, position, rotation, Width, Height);
+
+        static void Shoot(Camera template, string name, Vector3 position, Quaternion rotation, int width, int height)
         {
             var go = new GameObject("Preview Camera");
             try
@@ -125,14 +166,14 @@ namespace RowVR.Editor
                 camera.fieldOfView = 80f;
                 camera.transform.SetPositionAndRotation(position, rotation);
 
-                var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+                var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
                 camera.targetTexture = target;
                 camera.Render();
 
                 var previous = RenderTexture.active;
                 RenderTexture.active = target;
-                var image = new Texture2D(Width, Height, TextureFormat.RGB24, false);
-                image.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
+                var image = new Texture2D(width, height, TextureFormat.RGB24, false);
+                image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                 image.Apply();
                 RenderTexture.active = previous;
 
