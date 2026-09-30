@@ -42,6 +42,7 @@ namespace RowVR.Editor
             ApplyPlayerSettings();
             ApplyQualitySettings();
             ApplyAudioSettings();
+            RenderPipelineBootstrap.Apply();
 
             // Must precede ConfigureXr: that method only tunes OpenXR settings that already
             // exist, and bails out when no plug-in provider has been enabled for Android.
@@ -241,6 +242,7 @@ namespace RowVR.Editor
             sb.AppendLine("  DSP buffer        : " + DspBufferSize() + " (want " + BestLatencyDspBuffer + ", Best latency)");
 
             sb.AppendLine();
+            sb.AppendLine(RenderPipelineBootstrap.Describe());
             sb.AppendLine(XRBootstrap.Describe());
             return sb.ToString();
         }
