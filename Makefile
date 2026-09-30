@@ -24,7 +24,7 @@ export APP_ID
 DOTNET_TEST_PROJ := tests/RowVR.Stroke.Tests/RowVR.Stroke.Tests.csproj
 
 .PHONY: help preflight connect disconnect bootstrap build deploy dev logs cast \
-        test test-unity record record-stop pull-recordings promote clean distclean
+        test test-unity preview record record-stop pull-recordings promote clean distclean
 
 help: ## Show this help
 	@echo "row_vr dev loop"
@@ -66,6 +66,9 @@ test: ## Tier 1: stroke detector tests. No Unity, no licence, no headset.
 
 test-unity: ## Run Unity EditMode tests (slower; needs the Editor)
 	@tools/test-unity.sh
+
+preview: ## Tier 2, headless: render Play Mode stills to .devloop/preview (PREVIEW_SECONDS=16)
+	@tools/preview.sh
 
 record: ## Start a recording take on the headset (NAME=steady-22spm)
 	@tools/record.sh start
