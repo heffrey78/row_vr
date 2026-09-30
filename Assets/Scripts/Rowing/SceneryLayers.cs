@@ -79,8 +79,8 @@ namespace RowVR.Rowing
         }
 
         /// <summary>
-        /// Level unit vector the rower faces, fixed once the rower's hands are first seen. The
-        /// boat travels the opposite way, since a sculler faces the stern.
+        /// Level unit vector the rower faces, toward the stern: the boat's heading from
+        /// BoatFrame (the machine's axis, learned from the hands), never the head's facing.
         /// </summary>
         public Vector3 RowerForward { get; private set; } = Vector3.forward;
 
@@ -150,12 +150,28 @@ namespace RowVR.Rowing
             CaptureCourse();
         }
 
+        BoatFrame _frame;
+
         void CaptureCourse()
         {
+            // The course runs along the boat, and the boat's heading comes from the machine's
+            // axis (BoatFrame, learned from the hands), never from where the rower looks.
+            if (_frame == null && _rig != null) _frame = _rig.GetComponent<BoatFrame>();
+            if (_frame != null && _frame.HasFrame)
+            {
+                RowerForward = _frame.Forward;
+                if (!_hasCourse)
+                {
+                    var centre = _frame.Centre;
+                    CourseOrigin = new Vector3(centre.x, 0f, centre.z);
+                    _hasCourse = true;
+                }
+                return;
+            }
             if (_hasCourse) return;
 
-            // The rower's facing is only trustworthy once they are in position, which is
-            // when their hands are first tracked. Until then, follow the camera.
+            // No boat frame (a scene without one): take the rower's facing once, when their
+            // hands are first tracked, and keep it.
             var ready = _rig != null && _rig.IsTracking;
             var forward = ready ? _rig.LastSample.HeadForward.ToVector3()
                         : _camera != null ? _camera.transform.forward : Vector3.forward;
