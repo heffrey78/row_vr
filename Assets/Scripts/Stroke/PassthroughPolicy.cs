@@ -17,6 +17,10 @@ namespace RowVR.Stroke
     /// later withdraws, and fading on it made the room flicker. A rower who pauses still
     /// holding the handle stays in the scene.
     ///
+    /// A pinch held for <see cref="PinchHoldSeconds"/> dismisses the room: the rower is back
+    /// in the scene until their next stroke, even without finding the handle. It is the way
+    /// out if they want the scene back while resting.
+    ///
     /// Known gap: opening the fingers without moving the hands (release B in the release-types
     /// recording) gives the detector nothing, so the room does not fade in until tracking is
     /// lost or the hands move. Engine-free and tested on the recordings (PassthroughPolicyTests).
@@ -27,12 +31,15 @@ namespace RowVR.Stroke
         public float TrackingLostSeconds = 1.5f;
         public float FadeInSeconds = 0.6f;
         public float FadeOutSeconds = 0.4f;
+        public float PinchHoldSeconds = 0.6f;
 
         double _lastTime = double.NaN;
         double _lostSince = double.NaN;
         double _offSince = double.NaN;
         bool _wanted;
         bool _driveFromCatch;
+        bool _dismissed;
+        double _pinchSince = double.NaN;
 
         /// <summary>0 the scene, 1 the room.</summary>
         public float Fade { get; private set; }
@@ -40,7 +47,10 @@ namespace RowVR.Stroke
         /// <summary>Whether the room is wanted now (Fade is easing toward it).</summary>
         public bool Wanted => _wanted;
 
-        public void Update(double timeSeconds, bool tracking, StrokeState state, bool handsOff)
+        /// <summary>True from a pinch-and-hold until the next stroke: the room will not come back.</summary>
+        public bool Dismissed => _dismissed;
+
+        public void Update(double timeSeconds, bool tracking, StrokeState state, bool handsOff, bool pinching = false)
         {
             var dt = double.IsNaN(_lastTime) ? 0f : (float)Math.Max(0d, Math.Min(0.25d, timeSeconds - _lastTime));
             _lastTime = timeSeconds;
@@ -59,7 +69,11 @@ namespace RowVR.Stroke
                 }
                 if (state.Phase == StrokePhase.Finish)
                 {
-                    if (_driveFromCatch) _wanted = false;
+                    if (_driveFromCatch)
+                    {
+                        _wanted = false;
+                        _dismissed = false;
+                    }
                     _driveFromCatch = false;
                 }
 
@@ -78,6 +92,18 @@ namespace RowVR.Stroke
                 if (double.IsNaN(_lostSince)) _lostSince = timeSeconds;
                 if (timeSeconds - _lostSince >= TrackingLostSeconds) _wanted = true;
             }
+
+            // Pinch and hold: back to the scene until the next stroke.
+            if (pinching)
+            {
+                if (double.IsNaN(_pinchSince)) _pinchSince = timeSeconds;
+                if (timeSeconds - _pinchSince >= PinchHoldSeconds) _dismissed = true;
+            }
+            else
+            {
+                _pinchSince = double.NaN;
+            }
+            if (_dismissed) _wanted = false;
 
             var seconds = _wanted ? FadeInSeconds : FadeOutSeconds;
             var step = seconds > 1e-4f ? dt / seconds : 1f;

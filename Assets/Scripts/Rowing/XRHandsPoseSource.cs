@@ -119,6 +119,19 @@ namespace RowVR.Rowing
             return true;
         }
 
+        /// <summary>Distance between thumb tip and index tip, metres, for a pinch; false if not tracked.</summary>
+        public bool TryGetPinchDistance(bool left, out float distance)
+        {
+            distance = float.PositiveInfinity;
+            if (_subsystem == null || !_subsystem.running) return false;
+            var hand = left ? _subsystem.leftHand : _subsystem.rightHand;
+            if (!hand.isTracked) return false;
+            if (!hand.GetJoint(XRHandJointID.ThumbTip).TryGetPose(out var thumb)) return false;
+            if (!hand.GetJoint(XRHandJointID.IndexTip).TryGetPose(out var index)) return false;
+            distance = Vector3.Distance(thumb.position, index.position);
+            return true;
+        }
+
         bool TryGetPalm(XRHand hand, out Vector3 worldPosition)
         {
             worldPosition = default;

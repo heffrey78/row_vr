@@ -6,7 +6,9 @@
     "Unity.XR.Hands",
     "Unity.XR.CoreUtils",
     "Unity.InputSystem",
-    "Unity.XR.ARFoundation"
+    "Unity.XR.ARFoundation",
+    "Unity.XR.CompositionLayers",
+    "Unity.XR.ARSubsystems"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -113,6 +113,20 @@ namespace RowVR.Rowing
 
         void LateUpdate()
         {
+            var tracking = _rig != null && _rig.IsTracking ? "tracking" : "NO HANDS";
+            var why = _rig != null ? _rig.SourceStatus : "no rig";
+
+            // Log changes, at most once a second. The status can carry a live counter, so
+            // logging every change would be every frame; never logging would mean the reason
+            // is only ever visible to whoever is wearing the headset. Logged even with the
+            // panel hidden, which is normal use: it is the only hand-tracking record in make logs.
+            if (why != _lastStatus && Time.unscaledTime - _lastStatusLogTime >= 1f)
+            {
+                _lastStatus = why;
+                _lastStatusLogTime = Time.unscaledTime;
+                if (logToConsole) Debug.Log($"[RowVR] hand source: {why}");
+            }
+
             if (_worldText == null) return;
 
             // Follow the head so the panel is always readable. Parented to the rig rather
@@ -126,18 +140,6 @@ namespace RowVR.Rowing
                     Quaternion.LookRotation(_worldText.transform.position - head.transform.position);
             }
 
-            var tracking = _rig != null && _rig.IsTracking ? "tracking" : "NO HANDS";
-            var why = _rig != null ? _rig.SourceStatus : "no rig";
-
-            // Log changes, at most once a second. The status can carry a live counter, so
-            // logging every change would be every frame; never logging would mean the reason
-            // is only ever visible to whoever is wearing the headset.
-            if (why != _lastStatus && Time.unscaledTime - _lastStatusLogTime >= 1f)
-            {
-                _lastStatus = why;
-                _lastStatusLogTime = Time.unscaledTime;
-                if (logToConsole) Debug.Log($"[RowVR] hand source: {why}");
-            }
             _worldText.text =
                 (string.IsNullOrEmpty(RecordingStatus) ? string.Empty : RecordingStatus + "\n") +
                 $"phase    {_state.Phase}\n" +
