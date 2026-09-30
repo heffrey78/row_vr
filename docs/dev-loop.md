@@ -276,6 +276,33 @@ batched, deliberate events rather than sprinkling them through a session.
 Tier 1 remains ~25x faster than even the best tier 3 case and needs no headset, so the
 ordering advice stands.
 
+#### Frame rate on the headset
+
+MQDH's profiler does not exist on Linux (ADR-0003), but the Quest runtime logs a
+performance line every second, and adb can read it:
+
+```sh
+pid=$(adb shell pidof -s com.heffrey78.rowvr | tr -d '\r')
+adb logcat -d --pid="$pid" | grep 'VrApi.*FPS='
+```
+
+Filter by the app's pid: the system shell logs the same lines under its own. Each line has
+`FPS=` (achieved/target), `Stale=` (frames the compositor had to reuse), `GPU%=` (GPU
+utilisation), and `CPU&GPU=` (frame time, ms). At 72 Hz the frame budget is 13.9 ms.
+
+Measured 2026-09-29, scenery (ADR-0008) plus oars and sound, 102 s while rowing 23 strokes:
+
+| | |
+|---|---|
+| FPS | 72 for 99 of 102 s; 67 for 2 s; 1 s at startup |
+| GPU utilisation | median 16%, peak 41% |
+| CPU&GPU frame time | median 5.5 ms of a 13.9 ms budget |
+| APK | 157 MB (150 MB before the scenery) |
+| Build after adding the scenery | 10:02, a new shader and scripts make it near-cold |
+
+Draw calls and triangle counts are not in the runtime's line. ADR-0008's budget of 100
+draw calls and 150k triangles is unmeasured, but the GPU is far from its limit.
+
 Individually:
 
 ```sh
