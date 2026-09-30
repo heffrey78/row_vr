@@ -71,11 +71,12 @@ namespace RowVR.Stroke
     /// through the drive and lifted from the finish through the recovery, easing over
     /// <see cref="OarSettings.BladeTransitionSeconds"/>.
     ///
-    /// The blade also follows the handle's direction, not only the phase. After a tracking
-    /// gap that spans the finish, the detector can stay in <see cref="StrokePhase.Drive"/>
-    /// through the whole recovery that follows (the erg-sloppy fixture does this at ~188s).
-    /// Its stroke count is unaffected, but a blade that believed it would sit buried while
-    /// the handle travels back to the catch. So during a drive the blade lifts when the
+    /// The blade also follows the handle's direction, not only the phase. When a catch is
+    /// called prematurely, with the hands low and hidden at the catch, the detector stays in
+    /// <see cref="StrokePhase.Drive"/> while the hands carry on toward the catch until the
+    /// real drive (the erg-sloppy fixture does this at ~187-190 s, TASK-0021). Its stroke
+    /// count is unaffected, but a blade that believed it would sit buried while the handle
+    /// still travels toward the catch. So during a drive the blade lifts when the
     /// handle moves clearly toward the catch, and goes back in when it moves clearly toward
     /// the finish. A blade in the water moving toward the catch is never right.
     ///
