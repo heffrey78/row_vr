@@ -56,6 +56,11 @@ namespace RowVR.Editor
             // session feature runs the AR session it needs.
             ("com.unity.openxr.feature.arfoundation-meta-session", "Meta Quest: Session"),
             ("com.unity.openxr.feature.arfoundation-meta-camera", "Meta Quest: Camera (Passthrough)"),
+            // The passthrough layer is submitted as a composition layer. Without this feature
+            // there is no CompositionLayerManager, the layer is created but never submitted,
+            // and the compositor reports "numLayers: 0": the fade opened onto black (developer
+            // report, 2026-09-30).
+            ("com.unity.openxr.feature.compositionlayers", "Composition Layers Support"),
         };
 
         /// <summary>

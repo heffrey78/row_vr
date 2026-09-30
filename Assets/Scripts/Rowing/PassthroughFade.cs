@@ -1,4 +1,6 @@
 using RowVR.Stroke;
+using Unity.XR.CompositionLayers;
+using Unity.XR.CompositionLayers.Services;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 
@@ -14,9 +16,15 @@ namespace RowVR.Rowing
     /// is a quad just in front of the camera on RowVR/PassthroughFade, which scales the eye
     /// buffer's colour and alpha down together; the compositor fills the gap with the room.
     ///
-    /// The cards (metrics, rapids, menu) draw after the fade (render queue 3550 and up), so
-    /// they stay readable over the room: letting go is also how the rower reaches the menu.
-    /// Headless previews have no passthrough, so there the fade reads as black.
+    /// The cards (metrics, rapids, menu) and the virtual hands draw after the fade (render queue
+    /// 3550 and up), so they stay visible over the room: letting go is also how the rower
+    /// reaches the menu, and they need to see where their fingers are.
+    ///
+    /// It never fades to black. The fade only shows once the passthrough composition layer
+    /// actually exists. The first headset test found passthrough on but no layer submitted,
+    /// because the Composition Layers feature was off, and the rower was left in the dark. If
+    /// the layer does not appear within a couple of seconds, it logs why and stays in the scene.
+    /// A held pinch returns to the scene until the next stroke (PassthroughPolicy).
     /// </summary>
     [RequireComponent(typeof(RowingRig))]
     public sealed class PassthroughFade : MonoBehaviour
@@ -36,9 +44,12 @@ namespace RowVR.Rowing
         Material _material;
         Renderer _quad;
         readonly PassthroughPolicy _policy = new PassthroughPolicy();
+        float _shown;
+        float _waitingFor;
+        bool _warned;
 
-        /// <summary>0 the scene, 1 the room.</summary>
-        public float Fade => _policy.Fade;
+        /// <summary>0 the scene, 1 the room, as actually shown (never without a passthrough layer).</summary>
+        public float Fade => _shown;
 
         void Awake()
         {
@@ -74,16 +85,56 @@ namespace RowVR.Rowing
             _quad.enabled = false;
         }
 
+        void Start()
+        {
+            // The virtual hands stay visible over the room, so the rower can see where their
+            // fingers are to poke the menu. Instanced materials: these renderers never swap them.
+            var hands = GameObject.Find("Hand Visualizer");
+            if (hands == null) return;
+            foreach (var renderer in hands.GetComponentsInChildren<Renderer>(true))
+                foreach (var m in renderer.materials)
+                    KeepVisible(m);
+        }
+
         void LateUpdate()
         {
             var tracking = _rig.IsTracking;
-            _policy.Update(Time.timeAsDouble, tracking, tracking ? _rig.State : default, _rig.HandsOff);
+            _policy.Update(Time.timeAsDouble, tracking, tracking ? _rig.State : default, _rig.HandsOff, _rig.Pinching);
 
-            var fade = _policy.Fade;
-            var on = fade > 0.001f;
-            if (_cameraManager.enabled != on) _cameraManager.enabled = on;
+            // Run passthrough whenever the room is wanted or still showing; show the fade only
+            // over a passthrough layer that actually exists.
+            var wantCamera = _policy.Wanted || _shown > 0.001f;
+            if (_cameraManager.enabled != wantCamera) _cameraManager.enabled = wantCamera;
+
+            var ready = PassthroughLayerExists();
+            var target = ready ? _policy.Fade : 0f;
+            _shown = Mathf.MoveTowards(_shown, target, Time.deltaTime / 0.4f);
+
+            _waitingFor = _policy.Wanted && !ready ? _waitingFor + Time.deltaTime : 0f;
+            if (_waitingFor > 2f && !_warned)
+            {
+                _warned = true;
+                Debug.LogWarning("[RowVR] passthrough wanted, but no passthrough layer after 2 s " +
+                                 $"(layer manager {(CompositionLayerManager.Instance != null ? "present" : "missing")}, " +
+                                 $"camera subsystem {(_cameraManager.subsystem != null && _cameraManager.subsystem.running ? "running" : "not running")}). " +
+                                 "Staying in the scene.");
+            }
+
+            var on = _shown > 0.001f;
             if (_quad.enabled != on) _quad.enabled = on;
-            _material.SetFloat("_Fade", fade);
+            _material.SetFloat("_Fade", _shown);
+        }
+
+        /// <summary>
+        /// Whether a passthrough composition layer is live: the layer manager exists (it needs the
+        /// Composition Layers OpenXR feature) and the camera subsystem has created its layer.
+        /// </summary>
+        bool PassthroughLayerExists()
+        {
+            if (CompositionLayerManager.Instance == null) return false;
+            if (_cameraManager.subsystem == null || !_cameraManager.subsystem.running) return false;
+            var layer = GameObject.Find("Passthrough");
+            return layer != null && layer.activeInHierarchy && layer.GetComponent<CompositionLayer>() != null;
         }
 
         /// <summary>

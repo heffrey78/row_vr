@@ -104,5 +104,35 @@ namespace RowVR.Stroke.Tests
             for (var i = 1; i < trace.Count; i++)
                 Assert.That(System.Math.Abs(trace[i].Fade - trace[i - 1].Fade), Is.LessThanOrEqualTo(maxStep));
         }
+
+        [Test]
+        public void A_held_pinch_brings_the_scene_back_until_the_next_stroke()
+        {
+            var policy = new PassthroughPolicy();
+            var t = 0d;
+            var withdrawn = new StrokeState(StrokePhase.Unknown, 0f, 0f, 0f, default, true);
+            policy.Update(t, true, withdrawn, false);
+            for (var i = 0; i < 72; i++) policy.Update(t += 1d / 72d, true, default, false);
+            Assert.That(policy.Wanted, Is.True, "let go: the room");
+
+            // A brief pinch is not enough; a held one is.
+            for (var i = 0; i < 20; i++) policy.Update(t += 1d / 72d, true, default, false, pinching: true);
+            policy.Update(t += 1d / 72d, true, default, false);
+            Assert.That(policy.Wanted, Is.True, "a 0.3 s pinch does nothing");
+            for (var i = 0; i < 50; i++) policy.Update(t += 1d / 72d, true, default, false, pinching: true);
+            Assert.That(policy.Wanted, Is.False, "held pinch: back to the scene");
+
+            // Stays dismissed through more let-go signals and lost tracking while resting.
+            policy.Update(t += 1d / 72d, true, withdrawn, true);
+            for (var i = 0; i < 72 * 3; i++) policy.Update(t += 1d / 72d, false, default, false);
+            Assert.That(policy.Wanted, Is.False);
+
+            // A stroke re-arms it: the next let-go brings the room back.
+            policy.Update(t += 1d / 72d, true, new StrokeState(StrokePhase.Catch, 0f, 0f, 1f, default), false);
+            policy.Update(t += 1d / 72d, true, new StrokeState(StrokePhase.Finish, 0f, 0f, 0f, default), false);
+            Assert.That(policy.Dismissed, Is.False);
+            policy.Update(t += 1d / 72d, true, withdrawn, false);
+            Assert.That(policy.Wanted, Is.True);
+        }
     }
 }

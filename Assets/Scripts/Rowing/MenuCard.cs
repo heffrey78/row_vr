@@ -217,7 +217,7 @@ namespace RowVR.Rowing
                 sheet.GetComponent<Renderer>().material.color = paper;
 
             var top = CardHeight * 0.5f;
-            Text("let go of the handle, then poke to choose", new Vector3(CardWidth * 0.5f - 0.02f, top - 0.035f, -0.004f),
+            Text("poke to choose  ·  pinch and hold to hide the room", new Vector3(CardWidth * 0.5f - 0.02f, top - 0.035f, -0.004f),
                  0.0017f, TextAnchor.MiddleRight, soft);
 
             // Workouts.

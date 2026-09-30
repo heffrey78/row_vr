@@ -80,6 +80,12 @@ namespace RowVR.Rowing
             worldPosition = default;
             return _live != null && _live.TryGetFingertip(left, out worldPosition);
         }
+
+        /// <summary>True while either hand pinches (thumb and index tips within 2 cm), from live tracking.</summary>
+        public bool Pinching =>
+            _live != null &&
+            ((_live.TryGetPinchDistance(true, out var l) && l < 0.02f) ||
+             (_live.TryGetPinchDistance(false, out var r) && r < 0.02f));
         string _sourceLabel;
         bool _hasPose;
 
