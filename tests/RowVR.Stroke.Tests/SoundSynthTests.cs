@@ -16,7 +16,7 @@ namespace RowVR.Stroke.Tests
             foreach (var s in new[]
             {
                 SoundSynth.Catch(1), SoundSynth.Finish(1), SoundSynth.Lapping(6f, 1), SoundSynth.Wind(8f, 1),
-                SoundSynth.HullRush(3f, 1), SoundSynth.Bird(0, 1), SoundSynth.Bird(1, 1), SoundSynth.Bird(2, 1), SoundSynth.Bird(3, 1),
+                SoundSynth.HullRush(3f, 1), SoundSynth.Rapids(4f, 1), SoundSynth.Bird(0, 1), SoundSynth.Bird(1, 1), SoundSynth.Bird(2, 1), SoundSynth.Bird(3, 1),
             })
             {
                 Assert.That(Peak(s), Is.GreaterThan(0.3f).And.LessThanOrEqualTo(1f));
@@ -29,7 +29,7 @@ namespace RowVR.Stroke.Tests
         {
             // A click is a jump between the last sample and the first bigger than the jumps
             // inside the sound itself.
-            foreach (var loop in new[] { SoundSynth.Lapping(6f, 3), SoundSynth.Wind(8f, 3), SoundSynth.HullRush(3f, 3) })
+            foreach (var loop in new[] { SoundSynth.Lapping(6f, 3), SoundSynth.Wind(8f, 3), SoundSynth.HullRush(3f, 3), SoundSynth.Rapids(4f, 3) })
             {
                 var largestStep = 0f;
                 for (var i = 1; i < loop.Length; i++) largestStep = Math.Max(largestStep, Math.Abs(loop[i] - loop[i - 1]));
