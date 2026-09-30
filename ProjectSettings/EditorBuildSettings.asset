@@ -12,5 +12,6 @@ EditorBuildSettings:
     path: Assets/Scenes/Rapids.unity
     guid: 43df155f84238ac61bd4e253a48e72a7
   m_configObjects:
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: b3bf0ca0919756d80b64b8eb87d92aa9, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: cf3fe645068a35b02af912be821d7e3e, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 57a6217c6b1136720908acd4ec770bf3, type: 2}
