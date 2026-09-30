@@ -21,7 +21,7 @@ namespace RowVR.Editor
     ///
     ///   Unity -batchmode -projectPath . -executeMethod RowVR.Editor.Preview.CaptureBatch
     ///         [-previewSeconds 16] [-previewOut .devloop/preview]
-    ///         [-previewFrames 0] [-previewFps 15]
+    ///         [-previewFrames 0] [-previewFps 15] [-previewScene Assets/Scenes/Row.unity]
     ///
     /// With -previewFrames N it also writes a sequence, frame_000.png onward, from the rower's
     /// eye: N frames at -previewFps of game time each, whatever the machine renders at
@@ -53,7 +53,7 @@ namespace RowVR.Editor
             _fps = Math.Max(1, (int)FloatArg("-previewFps", 15f));
             Directory.CreateDirectory(_outDir);
 
-            EditorSceneManager.OpenScene(ScenePath);
+            EditorSceneManager.OpenScene(StringArg("-previewScene", ScenePath));
             _batchStarted = EditorApplication.timeSinceStartup;
             EditorApplication.update += Tick;
             EditorApplication.EnterPlaymode();

@@ -44,6 +44,13 @@ namespace RowVR.Rowing
         public Color buoyA = new Color(0.95f, 0.55f, 0.28f);
         public Color buoyB = new Color(0.97f, 0.95f, 0.88f);
 
+        [Header("River (rapids)")]
+        public Color rock = new Color(0.46f, 0.47f, 0.5f);
+        public Color rockShade = new Color(0.32f, 0.33f, 0.38f);
+        public Color foam = new Color(0.95f, 0.97f, 0.96f);
+        public Color raft = new Color(0.96f, 0.62f, 0.2f);
+        public Color raftFloor = new Color(0.3f, 0.33f, 0.38f);
+
         [Header("Ink and paper")]
         public Color ink = new Color(0.17f, 0.14f, 0.16f);
         public Color shadeTint = new Color(0.66f, 0.68f, 0.82f);
