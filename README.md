@@ -3,13 +3,19 @@
 A rowing app for Meta Quest 3, driven by **hand tracking** (no controllers).
 Unity 6, OpenXR, developed on **Linux**.
 
-Status: **becoming a rowing app.** Verified on a Quest 3 on the rower's own machine: hand
-tracking counts strokes, two oars sweep in the rower's hands, and sounds mark the catch and
-finish. Built and checked in headless previews (`make preview`), but **not yet seen in the
-headset**: an illustrated lake (sky, hills, trees, water) that passes at a speed from a boat
-model, a scull with riggers, a hand-lettered card with time, pace and distance, and an ambient
-soundscape. Roadmapped: a forward-facing rapids scene (REQ-0007) and passthrough when the
-rower lets go (REQ-0005).
+![Rowing on the illustrated lake](docs/media/row.gif)
+
+*Six seconds from the rower's eye, rendered headless with `make preview GIF=1` while replaying a
+real rowing-machine recording (`real-erg-steady-12strokes-20260927`). It is not a capture
+from the headset.*
+
+Status: **a rowing app for the developer's own machine.** Verified on a Quest 3 on the machine:
+hand tracking counts strokes, two oars sweep in the rower's hands, sounds mark the catch and
+finish, and (seen by the rower on 2026-09-30) the illustrated lake, the scull and the
+hand-lettered card with time, pace and distance. Speed comes from a boat model calibrated on
+real recordings. The ambient soundscape is built but not yet judged in the headset. Next: a
+forward-facing rapids scene (REQ-0007) and a hands-only menu for workouts and resistance
+(REQ-0008).
 
 ## Why this repo looks the way it does
 

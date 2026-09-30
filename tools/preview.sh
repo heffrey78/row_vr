@@ -5,6 +5,7 @@
 #
 #   make preview                 # capture 16 s into Play Mode
 #   make preview PREVIEW_SECONDS=30   # later in the take
+#   make preview GIF=1                 # also a ~6 s GIF from the rower's eye (needs ffmpeg)
 #
 # Needs a display (it renders on the GPU, so no -nographics), and the Editor must not
 # already have the project open. Like any batch Unity run, it kills the adb server when it
@@ -16,7 +17,7 @@ log="$STATE_DIR/preview.log"
 out="$STATE_DIR/preview"
 : > "$log"
 mkdir -p "$out"
-rm -f "$out"/*.png
+rm -f "$out"/*.png "$out"/*.gif
 
 [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] || die "No display. Preview renders on the GPU and needs one."
 [[ ! -f "$REPO_ROOT/Temp/UnityLockfile" ]] || warn "Temp/UnityLockfile exists; if the Editor has the project open, close it first."
@@ -29,7 +30,9 @@ start=$SECONDS
   -logFile "$log" \
   -executeMethod RowVR.Editor.Preview.CaptureBatch \
   -previewSeconds "${PREVIEW_SECONDS:-16}" \
-  -previewOut "$out" &
+  -previewOut "$out" \
+  -previewFrames "$([[ -n "${GIF:-}" ]] && echo 90 || echo 0)" \
+  -previewFps 15 &
 unity_pid=$!
 
 # Unity can take minutes to shut down after a batch run, and on this machine it has hung in
@@ -49,7 +52,8 @@ if kill -0 "$unity_pid" 2>/dev/null; then
   pkill -9 -f "AndroidPlayer/SDK/platform-tools/adb kill-server" 2>/dev/null || true
   kill "$unity_pid" 2>/dev/null; sleep 3; kill -9 "$unity_pid" 2>/dev/null || true
 fi
-wait "$unity_pid" 2>/dev/null
+# Unity is often killed above, so its exit status says nothing; the log and stills decide.
+wait "$unity_pid" 2>/dev/null || true
 status=0
 grep -qE '^\[RowVR\] preview: captured' "$log" || status=1
 ls "$out"/*.png >/dev/null 2>&1 || status=1
@@ -63,5 +67,14 @@ if (( status != 0 )); then
 fi
 
 grep -E '^\[RowVR\] preview' "$log" | tail -1 || true
+
+if [[ -n "${GIF:-}" ]] && ls "$out"/frame_*.png >/dev/null 2>&1; then
+  command -v ffmpeg >/dev/null 2>&1 || die "GIF=1 needs ffmpeg."
+  # A palette built from the clip itself keeps the illustrated colours clean in 256 colours.
+  ffmpeg -loglevel error -y -framerate 15 -i "$out/frame_%03d.png" \
+    -vf "scale=480:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4" \
+    "$out/row.gif"
+  rm -f "$out"/frame_*.png
+fi
 ok "Preview in ${elapsed}s:"
 ls -1 "$out"/*.png | sed 's/^/     /'
