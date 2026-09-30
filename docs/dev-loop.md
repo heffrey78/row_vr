@@ -397,6 +397,22 @@ very slow piece, and one where you stop mid-stroke. The last two are where detec
 
 ---
 
+## 5b. Passthrough and the boundary
+
+When you let go of the handle, the room fades in (REQ-0005, ADR-0014), and it fades out at the
+end of your first stroke. It uses the Quest's passthrough through Unity's OpenXR Meta package,
+and `make bootstrap` turns on the two features it needs (Meta Quest: Session and Camera). The
+menu and the numbers stay drawn over the room.
+
+The room shows after about 0.3 s when your hands clearly leave the handle, and up to about 3 s
+when the detector has to wait to rule out a stroke. If you open your fingers but keep your hands
+still, nothing changes until tracking is lost: a known gap, noted in `PassthroughPolicy`.
+
+**The boundary grid** is the Quest's, not the app's, and the app cannot choose it. For rowing,
+set up a **stationary boundary** in the headset (Settings, then Boundary, then Stationary)
+while sitting on the machine. The room-scale grid then stops drawing through the scene as you
+row.
+
 ## 6. Troubleshooting
 
 **`adb devices` shows `no permissions`** → §1.3 udev rules, and check you are in `plugdev`

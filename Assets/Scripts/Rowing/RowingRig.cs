@@ -46,6 +46,9 @@ namespace RowVR.Rowing
 
         public StrokeState State { get; private set; }
 
+        /// <summary>The detector's let-go signal (transient; see StrokeDetector.HandsOff).</summary>
+        public bool HandsOff => _detector != null && _detector.HandsOff;
+
         /// <summary>
         /// The raw pose that produced the current <see cref="State"/>. Exposed so a recorder
         /// can capture exactly what the detector saw, rather than polling the pose source a

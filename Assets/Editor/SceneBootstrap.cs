@@ -46,6 +46,7 @@ namespace RowVR.Editor
         const string IllustratedShaderPath = "Assets/Shaders/RowVRIllustrated.shader";
         const string TextShaderPath = "Assets/Shaders/RowVRText.shader";
         const string PanelFontPath = "Assets/Fonts/PatrickHand-Regular.ttf";
+        const string FadeShaderPath = "Assets/Shaders/RowVRPassthroughFade.shader";
 
         /// <summary>
         /// Adds the scenery (ADR-0008) to the open scene, or brings existing scenery up to
@@ -384,6 +385,12 @@ namespace RowVR.Editor
             serializedPanel.FindProperty("font").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>(PanelFontPath);
             serializedPanel.FindProperty("textShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(TextShaderPath);
             serializedPanel.ApplyModifiedPropertiesWithoutUndo();
+
+            var passthrough = go.GetComponent<PassthroughFade>();
+            if (passthrough == null) passthrough = go.AddComponent<PassthroughFade>();
+            var serializedPassthrough = new SerializedObject(passthrough);
+            serializedPassthrough.FindProperty("fadeShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(FadeShaderPath);
+            serializedPassthrough.ApplyModifiedPropertiesWithoutUndo();
 
             var menu = go.GetComponent<MenuCard>();
             if (menu == null) menu = go.AddComponent<MenuCard>();

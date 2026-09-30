@@ -89,6 +89,10 @@ namespace RowVR.Rowing
             _tick.clip.SetData(tick, 0);
 
             Build();
+            // Stays readable over the room when passthrough fades in (ADR-0014).
+            PassthroughFade.KeepVisible(_card);
+            PassthroughFade.KeepVisible(_buttonMaterial);
+            PassthroughFade.KeepVisible(_selectedMaterial);
             _card.gameObject.SetActive(false);
         }
 

@@ -53,6 +53,8 @@ namespace RowVR.Rowing
             _textMaterial = new Material(textShader) { name = "Rapids Lettering", mainTexture = font.material.mainTexture };
             Font.textureRebuilt += OnFontRebuilt;
             Build();
+            // Stays readable over the room when passthrough fades in (ADR-0014).
+            PassthroughFade.KeepVisible(_card);
             _card.gameObject.SetActive(false);
         }
 
