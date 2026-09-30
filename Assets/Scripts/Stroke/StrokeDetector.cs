@@ -81,6 +81,13 @@ namespace RowVR.Stroke
         float _gripBaseline;
         bool _handsOff;
         double _handsOffSince;
+
+        /// <summary>
+        /// True while the hands' spacing says they have left the handle (ADR-0007). Transient:
+        /// it clears after a pause, when the grip is relearned, so consumers that need to
+        /// remember a let-go must latch it (PassthroughPolicy does).
+        /// </summary>
+        public bool HandsOff => _handsOff;
         // The grip is only adopted once the spacing has held steady; see UpdateGrip.
         float _gripCandidate;
         double _gripCandidateSince;
