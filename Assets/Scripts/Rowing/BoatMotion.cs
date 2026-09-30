@@ -21,6 +21,10 @@ namespace RowVR.Rowing
         [Range(1, 10)]
         [SerializeField] int resistance = 5;
 
+        [Tooltip("Set the scenery's speed from the boat. Off in the rapids, where RapidsMotion " +
+                 "adds the current and sets it instead.")]
+        [SerializeField] bool driveScenery = true;
+
         RowingRig _rig;
         SceneryLayers _scenery;
 
@@ -39,7 +43,7 @@ namespace RowVR.Rowing
             _scenery = FindFirstObjectByType<SceneryLayers>();
             Boat = new BoatModel();
             Session = new SessionStats();
-            if (_scenery != null) _scenery.UseDebugSpeed = false;
+            if (_scenery != null && driveScenery) _scenery.UseDebugSpeed = false;
         }
 
         // LateUpdate: RowingRig's Update has produced this frame's state.
@@ -58,7 +62,7 @@ namespace RowVR.Rowing
                 Session.Tick(t, Boat.Distance);
             }
 
-            if (_scenery != null) _scenery.Speed = Boat.VisibleSpeed;
+            if (_scenery != null && driveScenery) _scenery.Speed = Boat.VisibleSpeed;
         }
     }
 }
