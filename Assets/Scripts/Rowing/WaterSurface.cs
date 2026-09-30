@@ -18,7 +18,7 @@ namespace RowVR.Rowing
     public sealed class WaterSurface : MonoBehaviour
     {
         [Tooltip("Metres covered by one repeat of the ripple texture.")]
-        [SerializeField] float tileSize = 4f;
+        [SerializeField] float tileSize = 7f;
 
         [Tooltip("Half-width of the surface, metres. Beyond the fog, inside the sky dome.")]
         [SerializeField] float halfSize = 880f;
@@ -26,7 +26,6 @@ namespace RowVR.Rowing
         [SerializeField] Color deepColour = new Color(0.1f, 0.24f, 0.34f);
         [SerializeField] Color lightColour = new Color(0.32f, 0.47f, 0.56f);
 
-        const int TextureSize = 128;
 
         SceneryLayers _layers;
         Transform _surface;
@@ -38,7 +37,10 @@ namespace RowVR.Rowing
             _material = _layers.CreateMaterial("Water");
             if (_material == null) { enabled = false; return; }
             _material.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
-            _material.SetTexture("_BaseMap", BuildRipples(deepColour, lightColour));
+            var palette = _layers.Palette;
+            _material.SetTexture("_BaseMap", palette != null
+                ? BuildRipples(palette.waterDeep, palette.waterLight, palette.waterDash)
+                : BuildRipples(deepColour, lightColour, Color.white));
             _material.SetTextureScale("_BaseMap", Vector2.one);
 
             var surface = new GameObject("Water");
@@ -87,32 +89,56 @@ namespace RowVR.Rowing
         }
 
         /// <summary>
-        /// A tileable ripple pattern: a few sine waves at whole-number frequencies (so the
-        /// edges meet), with longer crests across the course than along it.
+        /// Illustrated water (ADR-0011): flat colour in two soft bands, with sparse drawn
+        /// dashes lying across the course, like a pen sketch of ripples. Tileable: every
+        /// dash wraps round the texture edges, and the bands use whole-number waves.
         /// </summary>
-        static Texture2D BuildRipples(Color deep, Color light)
+        static Texture2D BuildRipples(Color deep, Color light, Color dash)
         {
-            var texture = new Texture2D(TextureSize, TextureSize, TextureFormat.RGBA32, true)
+            const int size = 256;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, true)
             {
                 name = "Ripples",
                 wrapMode = TextureWrapMode.Repeat,
                 filterMode = FilterMode.Trilinear,
-                anisoLevel = 4,
+                // Low on purpose: high anisotropy keeps the dashes sharp at grazing angles,
+                // where they stretch into streaks that read as rain.
+                anisoLevel = 2,
             };
 
-            var pixels = new Color[TextureSize * TextureSize];
-            for (var y = 0; y < TextureSize; y++)
+            var pixels = new Color[size * size];
+            for (var y = 0; y < size; y++)
             {
-                for (var x = 0; x < TextureSize; x++)
+                var v = 2f * Mathf.PI * y / size;
+                var band = Mathf.SmoothStep(0f, 1f, 0.5f + 0.5f * Mathf.Sin(2f * v + 0.6f * Mathf.Sin(v)));
+                var row = Color.Lerp(deep, light, 0.25f + 0.35f * band);
+                for (var x = 0; x < size; x++) pixels[y * size + x] = row;
+            }
+
+            // Dashes: thin, tapered, lying across the course (along U), a few pixels tall.
+            var random = new System.Random(5);
+            for (var d = 0; d < 22; d++)
+            {
+                var cx = (float)random.NextDouble() * size;
+                var cy = (float)random.NextDouble() * size;
+                var halfLength = 8f + (float)random.NextDouble() * 22f;
+                var halfHeight = 1.1f + (float)random.NextDouble() * 0.9f;
+                var strength = 0.55f + (float)random.NextDouble() * 0.45f;
+                for (var dy = -3; dy <= 3; dy++)
                 {
-                    var u = 2f * Mathf.PI * x / TextureSize;
-                    var v = 2f * Mathf.PI * y / TextureSize;
-                    var h = 0.45f * Mathf.Sin(3f * v + Mathf.Sin(u))
-                          + 0.25f * Mathf.Sin(5f * v + 2f * u)
-                          + 0.2f * Mathf.Sin(7f * v - 3f * u + 1.3f)
-                          + 0.1f * Mathf.Sin(11f * v + 5f * u);
-                    var t = Mathf.SmoothStep(0f, 1f, 0.5f + 0.5f * h);
-                    pixels[y * TextureSize + x] = Color.Lerp(deep, light, t);
+                    for (var dx = -(int)halfLength - 1; dx <= (int)halfLength + 1; dx++)
+                    {
+                        var u = dx / halfLength;
+                        if (Mathf.Abs(u) > 1f) continue;
+                        // Tapered at both ends, soft at the top and bottom edges.
+                        var thickness = halfHeight * Mathf.Sqrt(1f - u * u);
+                        var cover = Mathf.Clamp01(thickness - Mathf.Abs(dy + (cy - Mathf.Floor(cy))) + 0.5f) * strength;
+                        if (cover <= 0f) continue;
+                        var px = ((int)(cx + dx) % size + size) % size;
+                        var py = ((int)cy + dy % size + size) % size;
+                        var i = py * size + px;
+                        pixels[i] = Color.Lerp(pixels[i], dash, cover);
+                    }
                 }
             }
 
