@@ -66,6 +66,29 @@ namespace RowVR.Editor
         }
 
         /// <summary>
+        /// Batch entry point: opens Row.unity, applies the scene setup that has grown since it
+        /// was first built (scenery, and the bring-up geometry it replaces), and saves it.
+        /// Lets scene changes be made and committed headless, like everything else here.
+        /// </summary>
+        public static void UpdateSceneBatch()
+        {
+            var ok = false;
+            try
+            {
+                var scene = EditorSceneManager.OpenScene(ScenePath);
+                var camera = Object.FindFirstObjectByType<XROrigin>()?.Camera;
+                ok = camera != null && ConfigureScenery(camera);
+                if (ok) ok = EditorSceneManager.SaveScene(scene);
+                Debug.Log(ok ? $"[RowVR] Updated and saved {ScenePath}." : $"[RowVR] Could not update {ScenePath}.");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+            }
+            EditorApplication.Exit(ok ? 0 : 1);
+        }
+
+        /// <summary>
         /// Everything here has to be saved in the scene rather than set at runtime:
         ///  - the shader reference, or a device build strips the shader;
         ///  - the fog, or URP strips the fog shader variants from the build, since it keeps
@@ -106,6 +129,15 @@ namespace RowVR.Editor
             RenderSettings.fogStartDistance = 150f;
             RenderSettings.fogEndDistance = 800f;
             RenderSettings.fogColor = layers.HorizonColour;
+
+            // The bring-up floor and forward marker were for finding your bearings in an
+            // empty scene. The scenery replaces them; left on, the floor shows through the
+            // water and the marker floats in the sky.
+            foreach (var name in new[] { "Floor", "Forward Marker" })
+            {
+                var bringUp = GameObject.Find(name);
+                if (bringUp != null) bringUp.SetActive(false);
+            }
             return true;
         }
 
