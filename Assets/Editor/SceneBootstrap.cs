@@ -43,6 +43,9 @@ namespace RowVR.Editor
         public static void Create() => TryCreate();
 
         const string UnlitShaderPath = "Assets/Shaders/RowVRUnlit.shader";
+        const string IllustratedShaderPath = "Assets/Shaders/RowVRIllustrated.shader";
+        const string TextShaderPath = "Assets/Shaders/RowVRText.shader";
+        const string PanelFontPath = "Assets/Fonts/PatrickHand-Regular.ttf";
 
         /// <summary>
         /// Adds the scenery (ADR-0008) to the open scene, or brings existing scenery up to
@@ -114,8 +117,12 @@ namespace RowVR.Editor
                 scenery.AddComponent<CourseScenery>();
             }
 
+            if (layers.GetComponent<ScenePalette>() == null) layers.gameObject.AddComponent<ScenePalette>();
+
             var serialized = new SerializedObject(layers);
             serialized.FindProperty("unlitShader").objectReferenceValue = shader;
+            serialized.FindProperty("illustratedShader").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Shader>(IllustratedShaderPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             // Transparent black: where no layer draws, passthrough will show (ADR-0008).
@@ -129,6 +136,18 @@ namespace RowVR.Editor
             RenderSettings.fogStartDistance = 150f;
             RenderSettings.fogEndDistance = 800f;
             RenderSettings.fogColor = layers.HorizonColour;
+
+            var water = layers.GetComponent<WaterSurface>();
+            if (water != null)
+            {
+                // Illustrated dashes are sparser and larger than the first ripple texture.
+                var serializedWater = new SerializedObject(water);
+                serializedWater.FindProperty("tileSize").floatValue = 7f;
+                serializedWater.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            var rig = Object.FindFirstObjectByType<RowingRig>();
+            if (rig != null) ConfigureRig(rig);
 
             // The bring-up floor and forward marker were for finding your bearings in an
             // empty scene. The scenery replaces them; left on, the floor shows through the
@@ -204,6 +223,10 @@ namespace RowVR.Editor
             rigObject.AddComponent<OarsView>();
             rigObject.AddComponent<GripDisplay>();
             rigObject.AddComponent<StrokeAudio>();
+            rigObject.AddComponent<BoatFrame>();
+            rigObject.AddComponent<BoatHullView>();
+            rigObject.AddComponent<BoatMotion>();
+            rigObject.AddComponent<Soundscape>();
             // Tier 2 replays a recorded take by default; untick it to use the simulator.
             rigObject.AddComponent<ClipPlayback>();
 
@@ -235,6 +258,44 @@ namespace RowVR.Editor
                 "  Rowing Rig: RowingRig + StrokeReadout + HandRecorder + HandleView + OarsView + GripDisplay + StrokeAudio + ClipPlayback, trackingOrigin and head wired\n" +
                 "Commit the scene, then edit it in the Editor from here on.");
             return true;
+        }
+
+        /// <summary>
+        /// The boat and the rower-facing panel on the Rowing Rig, and the debugging aids off.
+        /// StrokeReadout still logs every catch for make logs; its floating panel is hidden.
+        /// </summary>
+        static void ConfigureRig(RowingRig rig)
+        {
+            var go = rig.gameObject;
+            if (go.GetComponent<BoatFrame>() == null) go.AddComponent<BoatFrame>();
+            if (go.GetComponent<BoatHullView>() == null) go.AddComponent<BoatHullView>();
+            if (go.GetComponent<BoatMotion>() == null) go.AddComponent<BoatMotion>();
+            if (go.GetComponent<Soundscape>() == null) go.AddComponent<Soundscape>();
+            var panel = go.GetComponent<MetricsPanel>();
+            if (panel == null) panel = go.AddComponent<MetricsPanel>();
+
+            var serializedPanel = new SerializedObject(panel);
+            serializedPanel.FindProperty("font").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>(PanelFontPath);
+            serializedPanel.FindProperty("textShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(TextShaderPath);
+            serializedPanel.ApplyModifiedPropertiesWithoutUndo();
+
+            var readout = go.GetComponent<StrokeReadout>();
+            if (readout != null)
+            {
+                var serializedReadout = new SerializedObject(readout);
+                serializedReadout.FindProperty("drawInWorld").boolValue = false;
+                serializedReadout.FindProperty("drawOnScreen").boolValue = false;
+                serializedReadout.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            var playback = go.GetComponent<ClipPlayback>();
+            if (playback != null)
+            {
+                var serializedPlayback = new SerializedObject(playback);
+                serializedPlayback.FindProperty("showHands").boolValue = false;
+                serializedPlayback.ApplyModifiedPropertiesWithoutUndo();
+            }
+            EditorUtility.SetDirty(go);
         }
 
         static bool SetReference(SerializedObject serialized, string propertyName, Object value)
