@@ -554,10 +554,11 @@ GameObject:
   - component: {fileID: 1483306203}
   - component: {fileID: 1483306201}
   - component: {fileID: 1483306204}
+  - component: {fileID: 1483306205}
+  - component: {fileID: 1483306209}
   - component: {fileID: 1483306208}
   - component: {fileID: 1483306207}
   - component: {fileID: 1483306206}
-  - component: {fileID: 1483306205}
   m_Layer: 0
   m_Name: Rowing Rig
   m_TagString: Untagged
@@ -766,6 +767,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 1483306190}
   m_Enabled: 1
   m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10039ad9e97d45eca8df6bc6636acdb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.MenuCard
+  font: {fileID: 12800000, guid: a70530211bbe4001b2c57187a89779df, type: 3}
+  textShader: {fileID: 4800000, guid: 3ab63c2bcb86422ca620d145e76b72b3, type: 3}
+  restBeforeShowing: 3
+  ahead: 0.5
+  toRight: -0.12
+  belowEyes: 0.5
+--- !u!114 &1483306206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3d44ee38a5794c22bbedbfa7d1679d87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.RapidsPanel
@@ -774,7 +793,7 @@ MonoBehaviour:
   ahead: 1.25
   toRight: 0.6
   belowEyes: 0.2
---- !u!114 &1483306206
+--- !u!114 &1483306207
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -789,7 +808,7 @@ MonoBehaviour:
   roarInRapid: 0.75
   roarInPool: 0.12
   spray: 0.5
---- !u!114 &1483306207
+--- !u!114 &1483306208
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -805,7 +824,7 @@ MonoBehaviour:
   width: 1.9
   tubeRadius: 0.2
   setBack: 0.9
---- !u!114 &1483306208
+--- !u!114 &1483306209
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

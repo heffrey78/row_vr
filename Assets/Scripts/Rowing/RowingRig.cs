@@ -66,6 +66,17 @@ namespace RowVR.Rowing
 
         StrokeDetector _detector;
         IHandPoseSource _source;
+        XRHandsPoseSource _live;
+
+        /// <summary>
+        /// An index fingertip from live hand tracking, for the hands-only menu (ADR-0013). Always
+        /// the real hands, even while a recording is replayed: recordings carry palms only.
+        /// </summary>
+        public bool TryGetFingertip(bool left, out Vector3 worldPosition)
+        {
+            worldPosition = default;
+            return _live != null && _live.TryGetFingertip(left, out worldPosition);
+        }
         string _sourceLabel;
         bool _hasPose;
 
@@ -93,7 +104,8 @@ namespace RowVR.Rowing
             }
 
             _detector = new StrokeDetector(settings);
-            _source = new XRHandsPoseSource(trackingOrigin, head);
+            _live = new XRHandsPoseSource(trackingOrigin, head);
+            _source = _live;
         }
 
         void Update()

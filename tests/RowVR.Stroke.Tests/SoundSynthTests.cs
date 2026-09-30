@@ -16,7 +16,7 @@ namespace RowVR.Stroke.Tests
             foreach (var s in new[]
             {
                 SoundSynth.Catch(1), SoundSynth.Finish(1), SoundSynth.Lapping(6f, 1), SoundSynth.Wind(8f, 1),
-                SoundSynth.HullRush(3f, 1), SoundSynth.Rapids(4f, 1), SoundSynth.Bird(0, 1), SoundSynth.Bird(1, 1), SoundSynth.Bird(2, 1), SoundSynth.Bird(3, 1),
+                SoundSynth.HullRush(3f, 1), SoundSynth.Rapids(4f, 1), SoundSynth.Tick(), SoundSynth.Bird(0, 1), SoundSynth.Bird(1, 1), SoundSynth.Bird(2, 1), SoundSynth.Bird(3, 1),
             })
             {
                 Assert.That(Peak(s), Is.GreaterThan(0.3f).And.LessThanOrEqualTo(1f));

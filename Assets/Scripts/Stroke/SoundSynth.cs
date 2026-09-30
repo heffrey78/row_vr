@@ -130,6 +130,17 @@ namespace RowVR.Stroke
             return Normalise(Loop(output), 0.75f);
         }
 
+        /// <summary>A soft wooden tick: a menu button pressed (ADR-0013).</summary>
+        public static float[] Tick()
+        {
+            var output = new float[Samples(0.08f)];
+            Tone(output, 0f, 0.05f, 1500f, 1100f, 0.8f, 0f);
+            var random = new Random(3);
+            var click = BandPass(Noise(output.Length, random), 3000f, 1.5f);
+            for (var i = 0; i < output.Length; i++) output[i] += click[i] * Envelope(i / (float)SampleRate, 0.0005f, 0.004f);
+            return Normalise(output, 0.6f);
+        }
+
         /// <summary>Number of bird species <see cref="Bird"/> knows.</summary>
         public const int BirdSpecies = 4;
 

@@ -113,12 +113,47 @@ namespace RowVR.Rowing
                 return;
             }
 
-            Set(0, "time", MetricsFormat.Time(session.ElapsedSeconds));
+            var workout = _motion.Workout;
+            var time = MetricsFormat.Time(session.ElapsedSeconds);
+            var distance = MetricsFormat.Distance(session.DistanceMetres);
+            Set(0, "time", time);
             Set(1, "/500m", MetricsFormat.Split(session.StrokeSplitSeconds));
-            Set(2, "metres", MetricsFormat.Distance(session.DistanceMetres));
+            Set(2, "metres", distance);
+
+            // The chosen workout (REQ-0008) takes over the lines it counts down.
+            if (session.Active && workout != null && workout.Workout.Kind != WorkoutKind.JustRow)
+            {
+                if (workout.Finished)
+                {
+                    _footer.text = "workout complete" + IntervalSummary(workout);
+                    return;
+                }
+                switch (workout.Workout.Kind)
+                {
+                    case WorkoutKind.Timed:
+                        Set(0, "time left", MetricsFormat.Time(workout.SecondsLeft));
+                        break;
+                    case WorkoutKind.Distance:
+                        Set(2, "metres left", MetricsFormat.Distance(workout.MetresLeft));
+                        break;
+                    case WorkoutKind.Intervals:
+                        Set(0, $"{(workout.Resting ? "rest" : "work")} {workout.Interval} of {workout.Workout.Repeats}",
+                            MetricsFormat.Time(workout.SecondsLeft));
+                        break;
+                }
+            }
+
             _footer.text = session.Active
                 ? $"rate {MetricsFormat.Rate(session.Rate)}  ·  {session.Strokes} strokes  ·  avg {MetricsFormat.Split(session.AverageSplitSeconds)}"
-                : "take a stroke to begin";
+                : $"{RowerSettings.Workout.Name}  ·  take a stroke to begin";
+        }
+
+        static string IntervalSummary(WorkoutProgress workout)
+        {
+            if (workout.IntervalMetres.Count == 0) return "";
+            var parts = "";
+            foreach (var m in workout.IntervalMetres) parts += (parts.Length > 0 ? " " : "") + MetricsFormat.Distance(m);
+            return "  ·  " + parts + " m";
         }
 
         void Set(int row, string label, string value)

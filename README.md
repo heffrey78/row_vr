@@ -13,9 +13,29 @@ Status: **a rowing app for the developer's own machine.** Verified on a Quest 3 
 hand tracking counts strokes, two oars sweep in the rower's hands, sounds mark the catch and
 finish, and (seen by the rower on 2026-09-30) the illustrated lake, the scull and the
 hand-lettered card with time, pace and distance. Speed comes from a boat model calibrated on
-real recordings. The ambient soundscape is built but not yet judged in the headset. Next: a
-forward-facing rapids scene (REQ-0007) and a hands-only menu for workouts and resistance
-(REQ-0008).
+real recordings. The ambient soundscape is built but not yet judged in the headset. **Built but not yet tried
+in the headset:** a forward-facing rapids scene (REQ-0007) and a hands-only menu for workouts,
+resistance and scene (REQ-0008), both checked in headless renders and an Android build.
+
+## Rowing with it
+
+Put the headset on, sit at the machine, take the handle, and row. The first stroke starts the
+session; the card to your right shows time, pace per 500 m, distance, rate and strokes.
+
+**The menu.** Let go of the handle and rest for a few seconds: a card appears low in front of
+you. Poke its buttons with a fingertip to choose:
+
+- **workout**: just row, a 20:00 piece, 2,000 m, or 4 x 3:00 intervals with 1:00 rest;
+- **resistance**: match your machine's dial (1-10), so the pace means something;
+- **scene**: the lake, or the rapids.
+
+The card disappears at your first stroke and cannot be pressed while you row. Choices are
+remembered.
+
+**The rapids.** Facing downstream, three rapids with pools between. In a rapid, keep your
+power at or above the target on the card to hold the good line; fall short and you drift
+into the rocks and rough water, which costs speed. Each rapid scores the share of it you
+spent on the line.
 
 ## Why this repo looks the way it does
 

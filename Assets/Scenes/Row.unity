@@ -556,6 +556,7 @@ GameObject:
   - component: {fileID: 1483306201}
   - component: {fileID: 1483306200}
   - component: {fileID: 1483306204}
+  - component: {fileID: 1483306205}
   m_Layer: 0
   m_Name: Rowing Rig
   m_TagString: Untagged
@@ -738,6 +739,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.BoatMotion
   resistance: 5
+  driveScenery: 1
 --- !u!114 &1483306202
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -789,6 +791,24 @@ MonoBehaviour:
   hullAtSpeed: 0.35
   birds: 0.45
   birdInterval: {x: 5, y: 14}
+--- !u!114 &1483306205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483306190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10039ad9e97d45eca8df6bc6636acdb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.MenuCard
+  font: {fileID: 12800000, guid: a70530211bbe4001b2c57187a89779df, type: 3}
+  textShader: {fileID: 4800000, guid: 3ab63c2bcb86422ca620d145e76b72b3, type: 3}
+  restBeforeShowing: 3
+  ahead: 0.5
+  toRight: -0.12
+  belowEyes: 0.5
 --- !u!1 &1523737649
 GameObject:
   m_ObjectHideFlags: 0
@@ -1201,6 +1221,7 @@ MonoBehaviour:
   middle: 0
   far: 0
   sky: 0
+  facingTravel: 0
   debugSpeed: 3.5
   debugAcceleration: 1.2
   debugDeceleration: 0.35
@@ -1259,6 +1280,11 @@ MonoBehaviour:
   blade: {r: 0.84, g: 0.36, b: 0.26, a: 1}
   buoyA: {r: 0.95, g: 0.55, b: 0.28, a: 1}
   buoyB: {r: 0.97, g: 0.95, b: 0.88, a: 1}
+  rock: {r: 0.46, g: 0.47, b: 0.5, a: 1}
+  rockShade: {r: 0.32, g: 0.33, b: 0.38, a: 1}
+  foam: {r: 0.95, g: 0.97, b: 0.96, a: 1}
+  raft: {r: 0.96, g: 0.62, b: 0.2, a: 1}
+  raftFloor: {r: 0.3, g: 0.33, b: 0.38, a: 1}
   ink: {r: 0.17, g: 0.14, b: 0.16, a: 1}
   shadeTint: {r: 0.66, g: 0.68, b: 0.82, a: 1}
   paper: {r: 0.97, g: 0.94, b: 0.86, a: 1}

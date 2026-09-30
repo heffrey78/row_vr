@@ -385,6 +385,13 @@ namespace RowVR.Editor
             serializedPanel.FindProperty("textShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(TextShaderPath);
             serializedPanel.ApplyModifiedPropertiesWithoutUndo();
 
+            var menu = go.GetComponent<MenuCard>();
+            if (menu == null) menu = go.AddComponent<MenuCard>();
+            var serializedMenu = new SerializedObject(menu);
+            serializedMenu.FindProperty("font").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>(PanelFontPath);
+            serializedMenu.FindProperty("textShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(TextShaderPath);
+            serializedMenu.ApplyModifiedPropertiesWithoutUndo();
+
             var readout = go.GetComponent<StrokeReadout>();
             if (readout != null)
             {
