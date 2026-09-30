@@ -14,12 +14,12 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogMode: 3
+  m_Fog: 1
+  m_FogColor: {r: 0.72, g: 0.8, b: 0.86, a: 1}
+  m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 0
-  m_LinearFogEnd: 300
+  m_LinearFogStart: 150
+  m_LinearFogEnd: 800
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
@@ -870,8 +870,8 @@ Camera:
   m_GameObject: {fileID: 1523737649}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1032,6 +1032,113 @@ MonoBehaviour:
   m_DebugDrawJoints: 0
   m_VelocityPrefab: {fileID: 8538602047018081646, guid: 629fd7882ec6bfc499a5fcf20035282b, type: 3}
   m_VelocityType: 2
+--- !u!1 &2056553441
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2056553446}
+  - component: {fileID: 2056553445}
+  - component: {fileID: 2056553444}
+  - component: {fileID: 2056553443}
+  - component: {fileID: 2056553442}
+  m_Layer: 0
+  m_Name: Scenery
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2056553442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056553441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c4a858a8a2645d9b08f89fa915cfd03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.CourseScenery
+  bankDistance: 60
+  buoyLine: 7
+  buoySpacing: 12.5
+  grass: {r: 0.33, g: 0.45, b: 0.24, a: 1}
+  bankFace: {r: 0.36, g: 0.33, b: 0.24, a: 1}
+  trees: {r: 0.14, g: 0.27, b: 0.15, a: 1}
+  buoyA: {r: 0.95, g: 0.45, b: 0.1, a: 1}
+  buoyB: {r: 0.95, g: 0.95, b: 0.92, a: 1}
+--- !u!114 &2056553443
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056553441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31e4505e771148f59744d1cc4b8a8e06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.WaterSurface
+  tileSize: 4
+  halfSize: 880
+  deepColour: {r: 0.1, g: 0.24, b: 0.34, a: 1}
+  lightColour: {r: 0.32, g: 0.47, b: 0.56, a: 1}
+--- !u!114 &2056553444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056553441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 058137a39edf4a09aa25d06d62e32359, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.SkyDome
+  zenithColour: {r: 0.28, g: 0.48, b: 0.78, a: 1}
+  radius: 900
+--- !u!114 &2056553445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056553441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f258d0959604d7cb92c5eb94f243c1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.SceneryLayers
+  near: 0
+  middle: 0
+  far: 0
+  sky: 0
+  debugSpeed: 3.5
+  debugAcceleration: 1.2
+  debugDeceleration: 0.35
+  useDebugSpeed: 1
+  unlitShader: {fileID: 4800000, guid: 0cf8c9f7c22d4545bd312532499cfb4e, type: 3}
+  horizonColour: {r: 0.72, g: 0.8, b: 0.86, a: 1}
+--- !u!4 &2056553446
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056553441}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1042,3 +1149,4 @@ SceneRoots:
   - {fileID: 1644521965}
   - {fileID: 1483306194}
   - {fileID: 1232882581}
+  - {fileID: 2056553446}
