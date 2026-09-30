@@ -22,6 +22,7 @@ namespace RowVR.Editor
     ///   Unity -batchmode -projectPath . -executeMethod RowVR.Editor.Preview.CaptureBatch
     ///         [-previewSeconds 16] [-previewOut .devloop/preview]
     ///         [-previewFrames 0] [-previewFps 15] [-previewScene Assets/Scenes/Row.unity]
+    ///         [-previewView ahead|level|menu]
     ///
     /// With -previewFrames N it also writes a sequence, frame_000.png onward, from the rower's
     /// eye: N frames at -previewFps of game time each, whatever the machine renders at
@@ -149,7 +150,13 @@ namespace RowVR.Editor
             var head = rig.LastSample.HeadPosition.ToVector3();
             var forward = layers != null ? layers.RowerForward : Vector3.forward;
             var right = Vector3.Cross(Vector3.up, forward);
-            var look = Quaternion.LookRotation(forward + right * 0.22f + Vector3.down * 0.28f);
+            // "menu" looks down at the chest, where the hands-only menu appears while resting.
+            // "level" looks straight downstream, for the rapids, where the raft's bow would
+            // otherwise fill the frame.
+            var view = StringArg("-previewView", "ahead");
+            var look = view == "menu" ? Quaternion.LookRotation(forward - right * 0.1f + Vector3.down * 0.9f)
+                     : view == "level" ? Quaternion.LookRotation(forward + right * 0.12f + Vector3.down * 0.06f)
+                     : Quaternion.LookRotation(forward + right * 0.22f + Vector3.down * 0.28f);
             Shoot(xrCamera, $"frame_{_frameIndex:000}", head, look, 640, 360);
             _frameIndex++;
         }

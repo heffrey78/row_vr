@@ -32,10 +32,20 @@ you. Poke its buttons with a fingertip to choose:
 The card disappears at your first stroke and cannot be pressed while you row. Choices are
 remembered.
 
+![The hands-only menu appearing while resting, and going at the first stroke](docs/media/menu.gif)
+
+*The menu, rendered headless (`make preview GIF=1 VIEW=menu`) from the steady recording: it
+appears after a few seconds of rest, and is gone the moment rowing starts again.*
+
 **The rapids.** Facing downstream, three rapids with pools between. In a rapid, keep your
 power at or above the target on the card to hold the good line; fall short and you drift
 into the rocks and rough water, which costs speed. Each rapid scores the share of it you
 spent on the line.
+
+![Rowing into the first rapid](docs/media/rapids.gif)
+
+*The rapids, rendered headless (`make preview GIF=1 SCENE=Assets/Scenes/Rapids.unity VIEW=level`)
+from the same recording, rowing into the first rapid. Neither clip is a headset capture.*
 
 ## Why this repo looks the way it does
 
