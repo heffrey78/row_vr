@@ -7,6 +7,7 @@
 #   make preview PREVIEW_SECONDS=30   # later in the take
 #   make preview GIF=1                 # also a ~6 s GIF from the rower's eye (needs ffmpeg)
 #   make preview SCENE=Assets/Scenes/Rapids.unity
+#   make preview GIF=1 VIEW=menu       # the GIF looks down at the menu (or VIEW=level, straight ahead)
 #
 # Needs a display (it renders on the GPU, so no -nographics), and the Editor must not
 # already have the project open. Like any batch Unity run, it kills the adb server when it
@@ -34,7 +35,8 @@ start=$SECONDS
   -previewOut "$out" \
   -previewFrames "$([[ -n "${GIF:-}" ]] && echo 90 || echo 0)" \
   -previewFps 15 \
-  -previewScene "${SCENE:-Assets/Scenes/Row.unity}" &
+  -previewScene "${SCENE:-Assets/Scenes/Row.unity}" \
+  -previewView "${VIEW:-ahead}" &
 unity_pid=$!
 
 # Unity can take minutes to shut down after a batch run, and on this machine it has hung in
