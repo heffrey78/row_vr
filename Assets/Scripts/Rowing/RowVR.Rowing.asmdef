@@ -5,7 +5,8 @@
     "RowVR.Stroke",
     "Unity.XR.Hands",
     "Unity.XR.CoreUtils",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.XR.ARFoundation"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
