@@ -17,9 +17,10 @@ namespace RowVR.Stroke
     /// later withdraws, and fading on it made the room flicker. A rower who pauses still
     /// holding the handle stays in the scene.
     ///
-    /// A pinch held for <see cref="PinchHoldSeconds"/> dismisses the room: the rower is back
-    /// in the scene until their next stroke, even without finding the handle. It is the way
-    /// out if they want the scene back while resting.
+    /// <see cref="Dismiss"/> (the wrist menu's "back to the scene") returns to the scene until
+    /// the next stroke, without finding the handle. A pinch did this at first, but the pinch is
+    /// the Quest's own system gesture and did not work reliably on top of it (developer,
+    /// 2026-09-30), so it is a button now (ADR-0015).
     ///
     /// Known gap: opening the fingers without moving the hands (release B in the release-types
     /// recording) gives the detector nothing, so the room does not fade in until tracking is
@@ -31,7 +32,6 @@ namespace RowVR.Stroke
         public float TrackingLostSeconds = 1.5f;
         public float FadeInSeconds = 0.6f;
         public float FadeOutSeconds = 0.4f;
-        public float PinchHoldSeconds = 0.6f;
 
         double _lastTime = double.NaN;
         double _lostSince = double.NaN;
@@ -39,7 +39,6 @@ namespace RowVR.Stroke
         bool _wanted;
         bool _driveFromCatch;
         bool _dismissed;
-        double _pinchSince = double.NaN;
 
         /// <summary>0 the scene, 1 the room.</summary>
         public float Fade { get; private set; }
@@ -47,10 +46,17 @@ namespace RowVR.Stroke
         /// <summary>Whether the room is wanted now (Fade is easing toward it).</summary>
         public bool Wanted => _wanted;
 
-        /// <summary>True from a pinch-and-hold until the next stroke: the room will not come back.</summary>
+        /// <summary>True from <see cref="Dismiss"/> until the next stroke: the room will not come back.</summary>
         public bool Dismissed => _dismissed;
 
-        public void Update(double timeSeconds, bool tracking, StrokeState state, bool handsOff, bool pinching = false)
+        /// <summary>Back to the scene until the next stroke.</summary>
+        public void Dismiss()
+        {
+            _dismissed = true;
+            _wanted = false;
+        }
+
+        public void Update(double timeSeconds, bool tracking, StrokeState state, bool handsOff)
         {
             var dt = double.IsNaN(_lastTime) ? 0f : (float)Math.Max(0d, Math.Min(0.25d, timeSeconds - _lastTime));
             _lastTime = timeSeconds;
@@ -93,16 +99,6 @@ namespace RowVR.Stroke
                 if (timeSeconds - _lostSince >= TrackingLostSeconds) _wanted = true;
             }
 
-            // Pinch and hold: back to the scene until the next stroke.
-            if (pinching)
-            {
-                if (double.IsNaN(_pinchSince)) _pinchSince = timeSeconds;
-                if (timeSeconds - _pinchSince >= PinchHoldSeconds) _dismissed = true;
-            }
-            else
-            {
-                _pinchSince = double.NaN;
-            }
             if (_dismissed) _wanted = false;
 
             var seconds = _wanted ? FadeInSeconds : FadeOutSeconds;

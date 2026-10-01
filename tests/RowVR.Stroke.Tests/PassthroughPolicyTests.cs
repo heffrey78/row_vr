@@ -106,7 +106,7 @@ namespace RowVR.Stroke.Tests
         }
 
         [Test]
-        public void A_held_pinch_brings_the_scene_back_until_the_next_stroke()
+        public void Dismissing_brings_the_scene_back_until_the_next_stroke()
         {
             var policy = new PassthroughPolicy();
             var t = 0d;
@@ -115,12 +115,9 @@ namespace RowVR.Stroke.Tests
             for (var i = 0; i < 72; i++) policy.Update(t += 1d / 72d, true, default, false);
             Assert.That(policy.Wanted, Is.True, "let go: the room");
 
-            // A brief pinch is not enough; a held one is.
-            for (var i = 0; i < 20; i++) policy.Update(t += 1d / 72d, true, default, false, pinching: true);
+            policy.Dismiss();
             policy.Update(t += 1d / 72d, true, default, false);
-            Assert.That(policy.Wanted, Is.True, "a 0.3 s pinch does nothing");
-            for (var i = 0; i < 50; i++) policy.Update(t += 1d / 72d, true, default, false, pinching: true);
-            Assert.That(policy.Wanted, Is.False, "held pinch: back to the scene");
+            Assert.That(policy.Wanted, Is.False, "back to the scene");
 
             // Stays dismissed through more let-go signals and lost tracking while resting.
             policy.Update(t += 1d / 72d, true, withdrawn, true);
