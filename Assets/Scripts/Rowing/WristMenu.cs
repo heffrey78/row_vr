@@ -31,6 +31,9 @@ namespace RowVR.Rowing
         [Tooltip("How far above the palm the fan's centre floats, metres.")]
         [SerializeField] float abovePalm = 0.06f;
 
+        [Tooltip("How far the fan is shifted from the palm toward the rower's right, metres. The left hand is held out to the left, so a fan centred on it puts its left buttons at the edge of hand tracking, where the right fingertip is lost.")]
+        [SerializeField] float inward = 0.1f;
+
         /// <summary>
         /// Headless previews have no hands: when set, the menu shows in front of the head so its
         /// layout can be rendered (make preview).
@@ -133,6 +136,8 @@ namespace RowVR.Rowing
                 var palmNormal = -(palm.rotation * Vector3.up);
                 if (tracked) facing = Vector3.Dot(palmNormal, (head.position - palm.position).normalized);
                 centre = palm.position + palmNormal * abovePalm;
+                // Toward the rower's right as they see it: inside the view, within the right hand's reach.
+                centre += Vector3.Cross(Vector3.up, Level(centre - eyes)) * inward;
             }
 
             _gate.Update(Time.timeAsDouble, tracked, facing, _rig.IsTracking ? _rig.State : default);
