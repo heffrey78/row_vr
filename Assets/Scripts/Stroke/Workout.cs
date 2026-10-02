@@ -34,7 +34,7 @@ namespace RowVR.Stroke
         }
 
         public static Workout JustRow() => new Workout(WorkoutKind.JustRow, "just row");
-        public static Workout Timed(double seconds) => new Workout(WorkoutKind.Timed, MetricsFormat.Time(seconds) + " piece", seconds);
+        public static Workout Timed(double seconds) => new Workout(WorkoutKind.Timed, MetricsFormat.Time(seconds), seconds);
         public static Workout Distance(double metres) => new Workout(WorkoutKind.Distance, MetricsFormat.Distance(metres) + " m", metres: metres);
 
         public static Workout Intervals(int repeats, double work, double rest) =>

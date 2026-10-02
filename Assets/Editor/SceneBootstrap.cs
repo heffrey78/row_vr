@@ -392,8 +392,9 @@ namespace RowVR.Editor
             serializedPassthrough.FindProperty("fadeShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(FadeShaderPath);
             serializedPassthrough.ApplyModifiedPropertiesWithoutUndo();
 
-            var menu = go.GetComponent<MenuCard>();
-            if (menu == null) menu = go.AddComponent<MenuCard>();
+            // The wrist menu (ADR-0015; it replaced ADR-0013's chest card).
+            var menu = go.GetComponent<WristMenu>();
+            if (menu == null) menu = go.AddComponent<WristMenu>();
             var serializedMenu = new SerializedObject(menu);
             serializedMenu.FindProperty("font").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>(PanelFontPath);
             serializedMenu.FindProperty("textShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(TextShaderPath);

@@ -24,7 +24,8 @@ namespace RowVR.Rowing
     /// actually exists. The first headset test found passthrough on but no layer submitted,
     /// because the Composition Layers feature was off, and the rower was left in the dark. If
     /// the layer does not appear within a couple of seconds, it logs why and stays in the scene.
-    /// A held pinch returns to the scene until the next stroke (PassthroughPolicy).
+    /// The wrist menu's "back to the scene" returns to the scene until the next stroke
+    /// (<see cref="Dismiss"/>, ADR-0015).
     /// </summary>
     [RequireComponent(typeof(RowingRig))]
     public sealed class PassthroughFade : MonoBehaviour
@@ -50,6 +51,9 @@ namespace RowVR.Rowing
 
         /// <summary>0 the scene, 1 the room, as actually shown (never without a passthrough layer).</summary>
         public float Fade => _shown;
+
+        /// <summary>Back to the scene until the next stroke.</summary>
+        public void Dismiss() => _policy.Dismiss();
 
         void Awake()
         {
@@ -99,7 +103,7 @@ namespace RowVR.Rowing
         void LateUpdate()
         {
             var tracking = _rig.IsTracking;
-            _policy.Update(Time.timeAsDouble, tracking, tracking ? _rig.State : default, _rig.HandsOff, _rig.Pinching);
+            _policy.Update(Time.timeAsDouble, tracking, tracking ? _rig.State : default, _rig.HandsOff);
 
             // Run passthrough whenever the room is wanted or still showing; show the fade only
             // over a passthrough layer that actually exists.
