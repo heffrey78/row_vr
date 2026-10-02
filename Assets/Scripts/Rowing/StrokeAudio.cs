@@ -18,10 +18,12 @@ namespace RowVR.Rowing
     /// catch to wait would ruin the timing, so that is accepted. What is suppressed is the
     /// finish: one only sounds for a drive whose catch was heard and not taken back.
     ///
-    /// The sounds are synthesised by SoundSynth (engine-free, tested): a "blup", splash and
-    /// droplets at the catch, a swirl and drips at the finish, several takes of each so
-    /// strokes do not repeat identically. Nothing to license, no binary asset. They play
-    /// from either side of the rower, roughly where the blades are, so they are spatialised.
+    /// The sounds are recordings of a paddle in a lake (TASK-0022): several takes of the
+    /// entry for the catch and of a soft slosh for the finish, never the same take twice
+    /// running. They live in Resources/Audio/Stroke, where SOURCES.md records their licence
+    /// (CC0), and tools/stroke-sounds.py rebuilds them. If a folder is empty, the takes
+    /// SoundSynth synthesises (engine-free, tested) stand in. They play from either side of
+    /// the rower, roughly where the blades are, so they are spatialised.
     /// </summary>
     [RequireComponent(typeof(RowingRig))]
     public sealed class StrokeAudio : MonoBehaviour
@@ -40,6 +42,10 @@ namespace RowVR.Rowing
         AudioSource _left, _right;
         AudioClip[] _catchClips, _finishClips;
         readonly System.Random _variety = new System.Random(11);
+        int _lastCatch = -1, _lastFinish = -1;
+
+        const string CatchRecordings = "Audio/Stroke/Catch";
+        const string FinishRecordings = "Audio/Stroke/Finish";
         bool _catchOpen;
 
         /// <summary>Sounds played since startup, for tests and diagnostics.</summary>
@@ -50,13 +56,8 @@ namespace RowVR.Rowing
         {
             _rig = GetComponent<RowingRig>();
             // Several takes of each, so no two strokes in a row sound identical.
-            _catchClips = new AudioClip[4];
-            _finishClips = new AudioClip[4];
-            for (var i = 0; i < 4; i++)
-            {
-                _catchClips[i] = Clip("Catch " + i, SoundSynth.Catch(100 + i));
-                _finishClips[i] = Clip("Finish " + i, SoundSynth.Finish(200 + i));
-            }
+            _catchClips = Takes(CatchRecordings, i => Clip("Catch " + i, SoundSynth.Catch(100 + i)));
+            _finishClips = Takes(FinishRecordings, i => Clip("Finish " + i, SoundSynth.Finish(200 + i)));
             _left = CreateSource("Stroke Audio Left");
             _right = CreateSource("Stroke Audio Right");
         }
@@ -98,7 +99,7 @@ namespace RowVR.Rowing
         void OnCatch(StrokeMetrics metrics)
         {
             _catchOpen = true;
-            Play(_catchClips[_variety.Next(_catchClips.Length)], catchVolume);
+            Play(Pick(_catchClips, ref _lastCatch), catchVolume);
             CatchSounds++;
             if (logSounds) Debug.Log($"[RowVR] sound: catch #{CatchSounds}");
         }
@@ -107,7 +108,7 @@ namespace RowVR.Rowing
         {
             if (!_catchOpen) return;
             _catchOpen = false;
-            Play(_finishClips[_variety.Next(_finishClips.Length)], finishVolume);
+            Play(Pick(_finishClips, ref _lastFinish), finishVolume);
             FinishSounds++;
             if (logSounds) Debug.Log($"[RowVR] sound: finish #{FinishSounds}");
         }
@@ -116,6 +117,26 @@ namespace RowVR.Rowing
         {
             _catchOpen = false;
             if (logSounds) Debug.Log("[RowVR] sound: catch withdrawn, no finish will sound");
+        }
+
+        /// <summary>The recorded takes in a Resources folder, or four synthesised ones if it has none.</summary>
+        static AudioClip[] Takes(string folder, Func<int, AudioClip> synthesise)
+        {
+            var recorded = Resources.LoadAll<AudioClip>(folder);
+            if (recorded.Length > 0) return recorded;
+            Debug.LogWarning($"[RowVR] No recordings in Resources/{folder}; using synthesised stroke sounds.");
+            var takes = new AudioClip[4];
+            for (var i = 0; i < takes.Length; i++) takes[i] = synthesise(i);
+            return takes;
+        }
+
+        /// <summary>A take at random, but never the one that played last.</summary>
+        AudioClip Pick(AudioClip[] takes, ref int last)
+        {
+            var index = _variety.Next(takes.Length);
+            if (index == last && takes.Length > 1) index = (index + 1 + _variety.Next(takes.Length - 1)) % takes.Length;
+            last = index;
+            return takes[index];
         }
 
         void Play(AudioClip clip, float volume)
