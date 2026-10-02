@@ -80,9 +80,7 @@ lifecycle.db-wal
 
 # ---- Performance Testing package build scratch ----
 # com.unity.test-framework.performance writes two JSON files into Assets/Resources/ on every
-# build and removes them afterwards, leaving an empty folder. Git cannot store an empty
-# folder, so committing its .meta alone would give a fresh clone an orphan meta. Nothing in
-# the project uses Resources/. If that changes, delete these lines and commit the folder.
-/Assets/Resources.meta
+# build and removes them afterwards. The folder itself is committed: it holds the recorded
+# stroke sounds (Assets/Resources/Audio).
 /Assets/Resources/PerformanceTestRun*.json
 /Assets/Resources/PerformanceTestRun*.json.meta
