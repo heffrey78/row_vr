@@ -694,7 +694,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82354c185fec4dbba8a4d4927f2c2d24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.GripDisplay
-  mode: 1
+  mode: 0
 --- !u!114 &1483306199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -739,7 +739,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.BoatFrame
   oarlockSpread: 0.8
-  waterBelowOarlock: 0.25
+  waterBelowOarlock: 0.6
+  oarlockBelowHands: 0.3
   oarlockSetBack: 0.1
   followSeconds: 4
 --- !u!114 &1483306204
@@ -787,6 +788,7 @@ MonoBehaviour:
   font: {fileID: 12800000, guid: a70530211bbe4001b2c57187a89779df, type: 3}
   textShader: {fileID: 4800000, guid: 3ab63c2bcb86422ca620d145e76b72b3, type: 3}
   abovePalm: 0.06
+  inward: 0.1
 --- !u!114 &1483306208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -831,10 +833,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04ffea15d7cb45a5ade263309d0d2522, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.RaftView
-  length: 4.2
-  width: 1.9
-  tubeRadius: 0.2
-  setBack: 0.9
+  length: 4.3
+  width: 2
+  tubeRadius: 0.25
+  setBack: 0.5
+  handsAboveSeat: 0.3
+  rocking: 1
+  depthMaskShader: {fileID: 4800000, guid: 82b33711c87043f6b0b0b2a30cdd86fa, type: 3}
 --- !u!114 &1483306211
 MonoBehaviour:
   m_ObjectHideFlags: 0

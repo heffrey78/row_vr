@@ -25,6 +25,9 @@ namespace RowVR.Rowing
 
         public RapidsRun Run { get; private set; }
 
+        /// <summary>The rapids' standing waves: RiverScenery draws them and RaftView rides them (#90).</summary>
+        public RiverWaves Waves { get; private set; }
+
         public float TargetWatts
         {
             get => targetWatts;
@@ -40,7 +43,13 @@ namespace RowVR.Rowing
         }
 
         /// <summary>Starts the run again from the top of the river.</summary>
-        public void Restart() => Run = new RapidsRun(RapidsRun.Standard(targetWatts));
+        public void Restart()
+        {
+            var sections = RapidsRun.Standard(targetWatts);
+            Run = new RapidsRun(sections);
+            var river = FindFirstObjectByType<RiverScenery>();
+            Waves = new RiverWaves(sections, river != null ? river.RiverHalfWidth : 14f);
+        }
 
         // After BoatMotion (-40) has advanced the boat this frame.
         void LateUpdate()

@@ -61,7 +61,7 @@ namespace RowVR.Stroke
     /// it comes back to the good line. Well off the line is rough water, which costs speed.
     /// Each rapid scores the fraction of its time spent on the line.
     ///
-    /// Comfort limits from #43 are built in, not left to the scene: sideways drift is at
+    /// Comfort limits from #90 are built in, not left to the scene: sideways drift is at
     /// most <see cref="RapidsSettings.MaxDriftSpeed"/> and eased, never beyond
     /// <see cref="RapidsSettings.MaxOffsetMetres"/>, and the current changes smoothly between
     /// sections. Engine-free and tested (RapidsRunTests).
@@ -257,16 +257,16 @@ namespace RowVR.Stroke
         static float Clamp01(float v) => v < 0f ? 0f : v > 1f ? 1f : v;
     }
 
-    /// <summary>Tuning for <see cref="RapidsRun"/>. The comfort limits come from #43.</summary>
+    /// <summary>Tuning for <see cref="RapidsRun"/>. The comfort limits come from #90.</summary>
     public sealed class RapidsSettings
     {
-        /// <summary>Fastest sideways drift, m/s (#43: at most 0.4).</summary>
+        /// <summary>Fastest sideways drift, m/s (#90: at most 0.4).</summary>
         public float MaxDriftSpeed = 0.4f;
 
         /// <summary>How fast sideways speed may change, m/s^2: drift eases in and out.</summary>
         public float MaxDriftAcceleration = 0.25f;
 
-        /// <summary>Furthest off the line the raft goes, metres (#43: at most 3).</summary>
+        /// <summary>Furthest off the line the raft goes, metres (#90: at most 3).</summary>
         public float MaxOffsetMetres = 3f;
 
         /// <summary>Within this far of the line counts as on it.</summary>

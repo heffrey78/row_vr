@@ -6,7 +6,7 @@ using RowVR.Stroke;
 
 namespace RowVR.Stroke.Tests
 {
-    /// <summary>The rapids game (#30) and its comfort limits (#43).</summary>
+    /// <summary>The rapids game (#30) and its comfort limits (#90).</summary>
     [TestFixture]
     public class RapidsRunTests
     {

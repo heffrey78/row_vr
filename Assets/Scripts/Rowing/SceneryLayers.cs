@@ -40,7 +40,7 @@ namespace RowVR.Rowing
 
         [Header("Travel")]
         [Tooltip("Off for the lake: the rower faces the stern and scenery recedes in front of them. " +
-                 "On for the rapids: the rower faces downstream and scenery comes toward them (#43).")]
+                 "On for the rapids: the rower faces downstream and scenery comes toward them (#90).")]
         [SerializeField] bool facingTravel;
 
         [Tooltip("Stand-in boat speed while rowing, m/s, until the speed model drives it. " +
@@ -81,7 +81,7 @@ namespace RowVR.Rowing
 
         /// <summary>
         /// How far the raft has drifted off the course's line, metres, positive toward the
-        /// rower's right. Scenery shifts the opposite way; the view never turns (#43).
+        /// rower's right. Scenery shifts the opposite way; the view never turns (#90).
         /// </summary>
         public float LateralOffset { get; set; }
 
