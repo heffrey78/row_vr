@@ -7,7 +7,7 @@ using UnityEngine.XR.ARFoundation;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// Shows the room when the rower lets go (REQ-0005, ADR-0014). PassthroughPolicy
+    /// Shows the room when the rower lets go (#28, #45). PassthroughPolicy
     /// (engine-free, tested on the recordings) decides when; this does the showing.
     ///
     /// Passthrough itself is com.unity.xr.meta-openxr's OpenXR camera feature, driven by AR
@@ -25,7 +25,7 @@ namespace RowVR.Rowing
     /// because the Composition Layers feature was off, and the rower was left in the dark. If
     /// the layer does not appear within a couple of seconds, it logs why and stays in the scene.
     /// The wrist menu's "back to the scene" returns to the scene until the next stroke
-    /// (<see cref="Dismiss"/>, ADR-0015).
+    /// (<see cref="Dismiss"/>, #46).
     /// </summary>
     [RequireComponent(typeof(RowingRig))]
     public sealed class PassthroughFade : MonoBehaviour

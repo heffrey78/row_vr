@@ -3,9 +3,9 @@ using System;
 namespace RowVR.Stroke
 {
     /// <summary>
-    /// When the wrist menu shows (ADR-0015): the rower turns their left hand over, palm toward
+    /// When the wrist menu shows (#46): the rower turns their left hand over, palm toward
     /// their face. That is never a rowing pose, since on the handle the palms face down and
-    /// back, so the gesture itself is the signal. The first menu (ADR-0013) appeared on rest
+    /// back, so the gesture itself is the signal. The first menu (#44) appeared on rest
     /// and hid on anything that looked like rowing, which included reaching for it.
     ///
     /// Shows after the palm has faced the head (the cosine at or above

@@ -6,7 +6,7 @@ using RowVR.Stroke;
 namespace RowVR.Stroke.Tests
 {
     /// <summary>
-    /// When the room fades in (REQ-0005, ADR-0014), on the rowing-machine recordings, stepped at
+    /// When the room fades in (#28, #45), on the rowing-machine recordings, stepped at
     /// 72 Hz as on the headset. Times are seconds from the start of each take.
     /// </summary>
     [TestFixture]

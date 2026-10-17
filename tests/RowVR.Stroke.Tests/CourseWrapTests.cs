@@ -3,7 +3,7 @@ using RowVR.Stroke;
 
 namespace RowVR.Stroke.Tests
 {
-    /// <summary>The endless-course arithmetic behind the scrolling scenery (ADR-0008).</summary>
+    /// <summary>The endless-course arithmetic behind the scrolling scenery (#39).</summary>
     [TestFixture]
     public class CourseWrapTests
     {

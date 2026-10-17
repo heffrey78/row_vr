@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace RowVR.Stroke
 {
-    /// <summary>How the panel writes numbers, the way rowing monitors do (REQ-0006-FUNC).</summary>
+    /// <summary>How the panel writes numbers, the way rowing monitors do (#29).</summary>
     public static class MetricsFormat
     {
         /// <summary>Elapsed time: m:ss under an hour, h:mm:ss after.</summary>

@@ -1,4 +1,4 @@
-// Unlit colour for the scenery layers (ADR-0008): texture x colour x vertex colour, with
+// Unlit colour for the scenery layers (#39): texture x colour x vertex colour, with
 // fog. A URP SubShader and a Built-in one; see the second for why both. One shader for the sky, the water and the shoreline keeps the scenery to one
 // cheap pass, and it is referenced from the scene so a device build cannot strip it.
 //
@@ -87,7 +87,7 @@ Shader "RowVR/Unlit"
                 // instead of starting at the fog distance.
                 half3 fogged = MixFog(colour.rgb, ComputeFogFactor(input.clipZ));
                 // Opaque scenery writes alpha 1; where nothing draws, the clear's alpha 0
-                // is what lets passthrough through (ADR-0008).
+                // is what lets passthrough through (#39).
                 return half4(lerp(colour.rgb, fogged, _FogAmount), 1);
             }
             ENDHLSL

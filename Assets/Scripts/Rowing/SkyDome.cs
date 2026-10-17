@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The sky (ADR-0008 Sky layer; illustrated per ADR-0011): a painted dome, a low morning
+    /// The sky (#39 Sky layer; illustrated per #42): a painted dome, a low morning
     /// sun with a warm glow along the horizon beneath it, flat painted clouds, and a few birds
     /// crossing slowly.
     ///

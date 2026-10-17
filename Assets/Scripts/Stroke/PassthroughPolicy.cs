@@ -3,11 +3,11 @@ using System;
 namespace RowVR.Stroke
 {
     /// <summary>
-    /// When to show the room (REQ-0005, ADR-0014). The rower is strapped into a machine in a
+    /// When to show the room (#28, #45). The rower is strapped into a machine in a
     /// fully virtual scene, and should never be blind once they are off the handle.
     ///
     /// The room fades in on evidence that the rower let go:
-    ///  - the detector withdrew a catch because the hands left the handle (ADR-0007);
+    ///  - the detector withdrew a catch because the hands left the handle (#38);
     ///  - the hands-off signal held for <see cref="HandsOffSeconds"/>. A single-frame blip is a
     ///    grip adjustment mid-row; the recordings have several;
     ///  - or hand tracking was lost for <see cref="TrackingLostSeconds"/>.
@@ -20,7 +20,7 @@ namespace RowVR.Stroke
     /// <see cref="Dismiss"/> (the wrist menu's "back to the scene") returns to the scene until
     /// the next stroke, without finding the handle. A pinch did this at first, but the pinch is
     /// the Quest's own system gesture and did not work reliably on top of it (developer,
-    /// 2026-09-30), so it is a button now (ADR-0015).
+    /// 2026-09-30), so it is a button now (#46).
     ///
     /// Known gap: opening the fingers without moving the hands (release B in the release-types
     /// recording) gives the detector nothing, so the room does not fade in until tracking is

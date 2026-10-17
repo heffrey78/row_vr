@@ -11,7 +11,7 @@ namespace RowVR.Stroke
         Intervals,
     }
 
-    /// <summary>A workout the rower can choose on the menu (REQ-0008).</summary>
+    /// <summary>A workout the rower can choose on the menu (#31).</summary>
     public readonly struct Workout
     {
         public readonly WorkoutKind Kind;
