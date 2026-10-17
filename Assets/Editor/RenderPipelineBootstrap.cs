@@ -8,12 +8,12 @@ using UnityEngine.Rendering.Universal;
 namespace RowVR.Editor
 {
     /// <summary>
-    /// URP, configured for Quest from code (ADR-0009). Called from ProjectBootstrap.Apply, so
+    /// URP, configured for Quest from code (#40). Called from ProjectBootstrap.Apply, so
     /// make bootstrap and every CLI build apply it. Idempotent.
     ///
     /// Settings are lean on purpose: stereo at 72 Hz on a tiled mobile GPU. HDR and
     /// post-processing also stay off because either can write alpha 1 and block passthrough
-    /// (ADR-0008).
+    /// (#39).
     /// </summary>
     public static class RenderPipelineBootstrap
     {

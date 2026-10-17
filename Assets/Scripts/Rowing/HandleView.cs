@@ -3,7 +3,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// A rowing handle between the rower's hands (REQ-0002-FUNC). In a fully virtual scene
+    /// A rowing handle between the rower's hands (#25). In a fully virtual scene
     /// the real handle is invisible, so this is how the rower sees that the app has their
     /// grip, and how they find the handle again after letting go.
     ///
@@ -63,7 +63,7 @@ namespace RowVR.Rowing
             // A unit cylinder is 2 units tall along its Y axis, hence the half length.
             _handle.localScale = new Vector3(diameter, length * 0.5f, diameter);
 
-            // With scenery present, the handle belongs to its Near layer (ADR-0008).
+            // With scenery present, the handle belongs to its Near layer (#39).
             var scenery = FindFirstObjectByType<SceneryLayers>();
             if (scenery != null) _handle.SetParent(scenery.Near, true);
 

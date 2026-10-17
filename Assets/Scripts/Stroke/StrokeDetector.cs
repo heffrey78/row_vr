@@ -83,7 +83,7 @@ namespace RowVR.Stroke
         double _handsOffSince;
 
         /// <summary>
-        /// True while the hands' spacing says they have left the handle (ADR-0007). Transient:
+        /// True while the hands' spacing says they have left the handle (#38). Transient:
         /// it clears after a pause, when the grip is relearned, so consumers that need to
         /// remember a let-go must latch it (PassthroughPolicy does).
         /// </summary>

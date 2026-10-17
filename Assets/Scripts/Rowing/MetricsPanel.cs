@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The rower's numbers (REQ-0006-FUNC): a hand-lettered card fixed in the boat, off to the
+    /// The rower's numbers (#29): a hand-lettered card fixed in the boat, off to the
     /// rower's right, like a monitor clipped to the rigger. It does not follow the head, so it
     /// is somewhere to glance at, not something in the way.
     ///
@@ -62,7 +62,7 @@ namespace RowVR.Rowing
             _textMaterial = new Material(textShader) { name = "Panel Lettering", mainTexture = font.material.mainTexture };
             Font.textureRebuilt += OnFontRebuilt;
             Build();
-            // Stays readable over the room when passthrough fades in (ADR-0014).
+            // Stays readable over the room when passthrough fades in (#45).
             PassthroughFade.KeepVisible(_card);
             _card.gameObject.SetActive(false);
         }
@@ -122,7 +122,7 @@ namespace RowVR.Rowing
             Set(1, "/500m", MetricsFormat.Split(session.StrokeSplitSeconds));
             Set(2, "metres", distance);
 
-            // The chosen workout (REQ-0008) takes over the lines it counts down.
+            // The chosen workout (#31) takes over the lines it counts down.
             if (session.Active && workout != null && workout.Workout.Kind != WorkoutKind.JustRow)
             {
                 if (workout.Finished)

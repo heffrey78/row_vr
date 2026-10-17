@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The rower's choices from the hands-only menu (REQ-0008), kept between launches in
+    /// The rower's choices from the hands-only menu (#31), kept between launches in
     /// PlayerPrefs: the machine's resistance dial, the workout, and the scene.
     /// </summary>
     public static class RowerSettings
