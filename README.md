@@ -37,10 +37,11 @@ remembered.
 *The menu, rendered headless (`make preview GIF=1 VIEW=menu`) from the steady recording: it
 appears after a few seconds of rest, and is gone the moment rowing starts again.*
 
-**The rapids.** Facing downstream, three rapids with pools between. In a rapid, keep your
-power at or above the target on the card to hold the good line; fall short and you drift
-into the rocks and rough water, which costs speed. Each rapid scores the share of it you
-spent on the line.
+**The rapids.** Facing downstream on an oar raft, three rapids with pools between. In a
+rapid, keep your power at or above the target on the card to hold the good line; fall short
+and you drift into the rocks and rough water, which costs speed and tosses the raft harder.
+The raft rides the standing waves while your view stays level. Each rapid scores the share
+of it you spent on the line.
 
 ![Rowing into the first rapid](docs/media/rapids.gif)
 
