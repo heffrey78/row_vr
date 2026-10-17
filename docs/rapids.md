@@ -1,4 +1,4 @@
-# Rapids: design sketch (REQ-0007, roadmap)
+# Rapids: design sketch (#30, roadmap)
 
 A second scene, gamified: a river run seen **facing forward**, powered by the rower's strokes,
 through **rapid sections** with **calm pools** between them. It's an interval workout disguised
@@ -19,9 +19,10 @@ Everything that is engine-free already fits:
 
 ## What is new
 
-- **Facing forward.** The rower looks where the raft goes. There are no oars to contradict
-  that, so the stroke reads as paddling power. The hands could show a double paddle blade or
-  nothing at all; to decide.
+- **Facing forward, on an oar raft.** The rower looks where the raft goes, sitting up on a
+  frame over the tubes and rowing two oars in oarlocks on that frame, as on a whitewater oar
+  rig (#90). An early build showed only the handle marker and sat the rower down inside the
+  tubes; the owner asked for oars and a higher seat.
 - **The line.** Each rapid has a good line and a rough one. Power *during the rapid* (average
   `BoatModel.Power` against a target) keeps the raft on the good line. Falling short drifts it
   toward rocks and waves: slower, a spray of water, lost points. **Never a crash or a jolt.**
@@ -35,13 +36,22 @@ Everything that is engine-free already fits:
 - **Scoring.** Time for the run, plus a "clean line" percentage per rapid. The summary card
   shows both, and the best run so far.
 
-## Comfort first (needs its own ADR before building)
+## Comfort first
 
-ADR-0010 excluded lateral motion and bobbing for the lake. Rapids invite both, and forward
-motion through narrow banks is strong vection. The starting position:
+#41 excluded lateral motion and bobbing for the lake. Rapids invite both, and forward
+motion through narrow banks is strong vection. The first decision (#43) kept the raft
+perfectly still; on the headset the rapids then had no effect, and the standing waves came up
+through the raft's floor. Its replacement, #90, keeps the view still but lets the **raft ride
+the waves**: it heaves, pitches and rolls over the crests the rower can see (RapidWaves and
+RaftRocking, engine-free and tested), within 6 degrees of roll, 5 of pitch and 0.15 m of
+heave, and settles still in the pools. A depth-only lid keeps the water out of the raft.
+Rocking the view itself waits for a headset test of the raft alone.
 
-1. **No roll, no pitch, ever.** The horizon stays level, as on the lake.
-2. **Forward speed is smoothed,** as in ADR-0010. Rapids add speed smoothly over seconds, not
+The starting position, before the headset:
+
+1. **No roll, no pitch, ever.** The horizon stays level, as on the lake. (Still true of the
+   view; the raft now rocks, #90.)
+2. **Forward speed is smoothed,** as in #41. Rapids add speed smoothly over seconds, not
    in surges.
 3. **Drifting off the line is slow and lateral only,** at most about 0.5 m/s sideways,
    eased in and out, and it is the world that slides, not the view rotating.

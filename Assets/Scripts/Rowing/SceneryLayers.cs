@@ -3,7 +3,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The scenery's four layers and the course they sit on (ADR-0008, REQ-0004-FUNC).
+    /// The scenery's four layers and the course they sit on (#39, #27).
     ///
     ///   Near    the boat, the oars and the handle; travels with the rower
     ///   Middle  the water and what floats on it, within about 50 m
@@ -11,7 +11,7 @@ namespace RowVR.Rowing
     ///   Sky     the sky dome, effectively at infinity
     ///
     /// Each layer has a mode. Hidden layers are not drawn, and once passthrough is enabled
-    /// (REQ-0005-FUNC) the room shows where they were, because the camera clears to
+    /// (#28) the room shows where they were, because the camera clears to
     /// transparent black and the sky is geometry, not the camera's skybox.
     ///
     /// The rower and the XR Origin never move. The boat's travel is <see cref="Distance"/>,
@@ -19,7 +19,7 @@ namespace RowVR.Rowing
     /// roots themselves stay at the world origin: the hand positions the stroke detector
     /// reads never pass through anything that moves.
     ///
-    /// Until the boat speed model (REQ-0003-FUNC) exists, a stand-in boat travels at
+    /// Until the boat speed model (#26) exists, a stand-in boat travels at
     /// <see cref="debugSpeed"/> while the rower is rowing and glides to a stop when they are
     /// not. Scenery that moved while the rower sat still would be motion with no effort
     /// behind it, the classic cause of VR sickness.
@@ -40,7 +40,7 @@ namespace RowVR.Rowing
 
         [Header("Travel")]
         [Tooltip("Off for the lake: the rower faces the stern and scenery recedes in front of them. " +
-                 "On for the rapids: the rower faces downstream and scenery comes toward them (ADR-0012).")]
+                 "On for the rapids: the rower faces downstream and scenery comes toward them (#90).")]
         [SerializeField] bool facingTravel;
 
         [Tooltip("Stand-in boat speed while rowing, m/s, until the speed model drives it. " +
@@ -58,7 +58,7 @@ namespace RowVR.Rowing
         [Tooltip("RowVR/Unlit. Set by RowVR > Add Scenery; a scene reference keeps it in the build.")]
         [SerializeField] Shader unlitShader;
 
-        [Tooltip("RowVR/Illustrated (ADR-0011). Set by RowVR > Add Scenery, for the same reason.")]
+        [Tooltip("RowVR/Illustrated (#42). Set by RowVR > Add Scenery, for the same reason.")]
         [SerializeField] Shader illustratedShader;
 
         [Tooltip("Where the water meets the sky; also the fog colour.")]
@@ -81,7 +81,7 @@ namespace RowVR.Rowing
 
         /// <summary>
         /// How far the raft has drifted off the course's line, metres, positive toward the
-        /// rower's right. Scenery shifts the opposite way; the view never turns (ADR-0012).
+        /// rower's right. Scenery shifts the opposite way; the view never turns (#90).
         /// </summary>
         public float LateralOffset { get; set; }
 
@@ -112,7 +112,7 @@ namespace RowVR.Rowing
 
         public Color HorizonColour => Palette != null ? Palette.skyHorizon : horizonColour;
 
-        /// <summary>The illustrated shader, or null in a scene set up before ADR-0011.</summary>
+        /// <summary>The illustrated shader, or null in a scene set up before #42.</summary>
         public Shader IllustratedShader => illustratedShader;
 
         ScenePalette _palette;
@@ -230,7 +230,7 @@ namespace RowVR.Rowing
             if (transparent) return;
 
             Debug.LogWarning("[RowVR] Camera clear was " + _camera.clearFlags + "; scenery needs solid " +
-                             "(0,0,0,0) so passthrough can show through (ADR-0008). Fixed for this run.");
+                             "(0,0,0,0) so passthrough can show through (#39). Fixed for this run.");
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
         }

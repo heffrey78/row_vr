@@ -5,15 +5,16 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The river for the rapids (REQ-0007, illustrated per ADR-0011): close, steep banks with
+    /// The river for the rapids (#30, illustrated per #42): close, steep banks with
     /// rocky cliffs and conifers, wrapping endlessly like the lake's; and, for each rapid in
     /// the run, its boulders, standing waves and foam, placed where that rapid lies on the
     /// river.
     ///
     /// The rough water sits mostly on the side a weak raft drifts toward (the section's
     /// DriftSide), so drifting off the line visibly carries the raft into it. The raft never
-    /// hits anything: rough water costs speed in RapidsRun, and nothing jolts the view
-    /// (ADR-0012).
+    /// hits anything: rough water costs speed in RapidsRun, and rocks the raft harder, but
+    /// nothing moves the view (#90). The standing waves come from RapidsMotion.Waves, which
+    /// RaftView rides, so the crests drawn are the ones that tip the raft.
     ///
     /// Scenery comes toward the rower, who faces downstream (SceneryLayers.facingTravel), and
     /// slides sideways with the raft's drift. Each rapid is one mesh, so the whole river is a
@@ -29,6 +30,8 @@ namespace RowVR.Rowing
         const float Window = 420f;
         const float TileLength = 70f;
         const int TileCount = (int)(Window * 2f / TileLength);
+
+        public float RiverHalfWidth => riverHalfWidth;
 
         SceneryLayers _layers;
         ScenePalette _palette;
@@ -50,16 +53,13 @@ namespace RowVR.Rowing
                 _banks.Add(CreateTile("River Banks " + i, _layers.Far, BuildBankTile(i), banksMaterial));
 
             if (_rapids == null) return;
-            var start = 0d;
             var index = 0;
             foreach (var section in _rapids.Run.Sections)
             {
-                if (section.Kind == SectionKind.Rapid)
-                {
-                    var tile = CreateTile("Rapid " + (++index), _layers.Middle, BuildRapid(section, index), rapidsMaterial);
-                    _rapidMeshes.Add((tile, start, section.LengthMetres));
-                }
-                start += section.LengthMetres;
+                if (section.Kind != SectionKind.Rapid) continue;
+                var (start, waves) = _rapids.Waves.Rapids[index++];
+                var tile = CreateTile("Rapid " + index, _layers.Middle, BuildRapid(section, waves, index), rapidsMaterial);
+                _rapidMeshes.Add((tile, start, section.LengthMetres));
             }
         }
 
@@ -171,38 +171,32 @@ namespace RowVR.Rowing
         /// <summary>
         /// One rapid, in section space (+Z downstream from its start): boulders and standing
         /// waves, heaviest on the drift side, with foam lying on the water between them. The
-        /// good line (X near 0) is kept clear.
+        /// good line (X near 0) is kept clear of rocks. The crests are <paramref name="waves"/>'s,
+        /// the same ones the raft rides.
         /// </summary>
-        Mesh BuildRapid(RiverSection section, int seed)
+        Mesh BuildRapid(RiverSection section, RapidWaves waves, int seed)
         {
             var mesh = new ShapeBuilder();
             var random = new System.Random(900 + seed);
             var side = section.DriftSide;
             var length = section.LengthMetres;
 
-            // Standing waves: smooth crests across the river, every few metres, each a
-            // continuous ridge with its height and position varying gently along it.
-            var crest = 0;
-            for (var z = 8f; z < length - 4f; z += 5f + (float)random.NextDouble() * 4f, crest++)
+            // Standing waves: each crest a ridge across the river, broken in places.
+            const int segments = 28;
+            const float up = RapidWaves.UpstreamFace, down = RapidWaves.DownstreamFace, foot = RapidWaves.Foot;
+            for (var c = 0; c < waves.CrestCount; c++)
             {
-                const int segments = 28;
-                var span = riverHalfWidth * 0.8f;
-                var phase = (float)random.NextDouble() * 6.28f;
-                float X(int k) => Mathf.Lerp(-span, span, (float)k / segments);
-                // Taller toward the drift side; low but present on the line.
-                float H(int k) => Mathf.Lerp(0.08f, 0.34f, Mathf.Clamp01(0.5f + 0.5f * X(k) * side / riverHalfWidth))
-                                  * (0.85f + 0.15f * Mathf.Sin(X(k) * 0.5f + phase))
-                                  * Mathf.Clamp01(1.2f - Mathf.Abs(X(k)) / span);
-                float Z(int k) => z + Mathf.Sin(X(k) * 0.18f + phase) * 0.8f;
+                float X(int k) => Mathf.Lerp(-waves.Span, waves.Span, (float)k / segments);
+                float H(int k) => waves.RidgeHeight(c, X(k));
+                float Z(int k) => waves.CrestZ(c, X(k));
                 for (var k = 0; k < segments; k++)
                 {
-                    // Broken crests: real standing waves are never one unbroken ridge.
-                    if (Mathf.Sin(X(k) * 0.9f + phase * 3f) > 0.55f) continue;
-                    mesh.Quad(new Vector3(X(k), 0.02f, Z(k) - 0.6f), new Vector3(X(k + 1), 0.02f, Z(k + 1) - 0.6f),
+                    if (waves.IsBroken(c, X(k))) continue;
+                    mesh.Quad(new Vector3(X(k), foot, Z(k) - up), new Vector3(X(k + 1), foot, Z(k + 1) - up),
                               new Vector3(X(k + 1), H(k + 1), Z(k + 1)), new Vector3(X(k), H(k), Z(k)),
                               _palette.waterLight, _palette.foam);
                     mesh.Quad(new Vector3(X(k), H(k), Z(k)), new Vector3(X(k + 1), H(k + 1), Z(k + 1)),
-                              new Vector3(X(k + 1), 0.02f, Z(k + 1) + 1f), new Vector3(X(k), 0.02f, Z(k) + 1f),
+                              new Vector3(X(k + 1), foot, Z(k + 1) + down), new Vector3(X(k), foot, Z(k) + down),
                               _palette.foam, _palette.waterLight);
                 }
             }

@@ -1,7 +1,7 @@
 namespace RowVR.Stroke
 {
     /// <summary>
-    /// Presses a button with a fingertip (ADR-0013). Positions are in the button's own frame:
+    /// Presses a button with a fingertip (#44). Positions are in the button's own frame:
     /// X and Y across its face (metres from its centre), Z its depth, positive in front of
     /// the face and negative pushed into it.
     ///

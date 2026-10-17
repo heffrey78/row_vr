@@ -16,6 +16,9 @@ namespace RowVR.Rowing
     ///
     /// Runs its LateUpdate before the views (execution order -50), after RowingRig's Update has
     /// taken the frame's pose. Keeps WaterHeight on SceneryLayers matched to the oarlocks.
+    ///
+    /// The rigging is the scull's by default; the rapids' raft sets its own (higher oarlocks,
+    /// so the rower sits up on the raft) when the scene is built.
     /// </summary>
     [DefaultExecutionOrder(-50)]
     [RequireComponent(typeof(RowingRig))]
@@ -27,6 +30,11 @@ namespace RowVR.Rowing
 
         [Tooltip("Height of the water below the oarlocks.")]
         [SerializeField] float waterBelowOarlock = 0.25f;
+
+        [Tooltip("How far the oarlocks sit below the average hand position. 0 for a scull, whose " +
+                 "handles run level with the oarlocks; an oar raft's rower sits up over them and " +
+                 "levers the oars down to the water.")]
+        [SerializeField] float oarlockBelowHands = 0f;
 
         [Tooltip("How far the oarlocks sit behind the average hand position. A sculler's catch " +
                  "reaches further past the oarlock than the finish comes back behind it; 0.1 m " +
@@ -43,27 +51,61 @@ namespace RowVR.Rowing
 
         public bool HasFrame { get; private set; }
 
-        /// <summary>Average hand position: the middle of the stroke, at oarlock height.</summary>
+        /// <summary>Average hand position: the middle of the stroke.</summary>
         public Vector3 Centre { get; private set; }
 
         /// <summary>The rower's levelled facing, toward the stern.</summary>
         public Vector3 Forward { get; private set; } = Vector3.forward;
 
         public Vector3 Right => Vector3.Cross(Vector3.up, Forward);
-        public float OarlockHeight => Centre.y;
-        public float WaterHeight => Centre.y - waterBelowOarlock;
+        public float OarlockHeight => Centre.y - oarlockBelowHands;
+        public float WaterHeight => OarlockHeight - waterBelowOarlock;
         public float OarlockSpread => oarlockSpread;
         public float OarlockAboveWater => waterBelowOarlock;
+        public float HandsAboveWater => waterBelowOarlock + oarlockBelowHands;
         public float OarlockSetBack => oarlockSetBack;
 
-        /// <summary>The oarlock's position; side -1 is the rower's left, +1 their right.</summary>
-        public Vector3 Oarlock(int side) => Centre - Forward * oarlockSetBack + Right * (oarlockSpread * side);
+        /// <summary>The oarlock's position; side -1 is the rower's left, +1 their right. Rocks with the boat.</summary>
+        public Vector3 Oarlock(int side) => BoatPoint(-oarlockSetBack, oarlockSpread * side, waterBelowOarlock);
 
-        /// <summary>A point in the boat: metres toward the stern, to the right, and above the water.</summary>
+        /// <summary>
+        /// A point in the boat's level frame: metres toward the stern, to the right, and above the
+        /// water. It does not rock, so a card placed with it stays steady.
+        /// </summary>
         public Vector3 Point(float towardStern, float toRight, float aboveWater) =>
             new Vector3(Centre.x, WaterHeight, Centre.z) + Forward * towardStern + Right * toRight + Vector3.up * aboveWater;
 
         public Quaternion Rotation => Quaternion.LookRotation(Forward, Vector3.up);
+
+        /// <summary>
+        /// The boat's rocking (#90): pitch and roll about a pivot in the boat, plus heave. Level
+        /// on the lake; RaftView sets it in the rapids.
+        /// </summary>
+        public Quaternion Rock { get; private set; } = Quaternion.identity;
+
+        public float Heave { get; private set; }
+
+        // Boat space: (to the right, above the water, toward the stern).
+        Vector3 _rockPivot;
+
+        /// <summary>Sets the rocking: bow (Forward) up and right side up, degrees, and heave, metres.</summary>
+        public void SetRock(float pitchDegrees, float rollDegrees, float heave, float pivotTowardStern, float pivotAboveWater)
+        {
+            Rock = Quaternion.Euler(-pitchDegrees, 0f, rollDegrees);
+            Heave = heave;
+            _rockPivot = new Vector3(0f, pivotAboveWater, pivotTowardStern);
+        }
+
+        /// <summary>A point on the boat itself, which rocks with it: as Point, then pitched, rolled and heaved.</summary>
+        public Vector3 BoatPoint(float towardStern, float toRight, float aboveWater)
+        {
+            var local = new Vector3(toRight, aboveWater, towardStern);
+            var rocked = _rockPivot + Rock * (local - _rockPivot) + Vector3.up * Heave;
+            return new Vector3(Centre.x, WaterHeight, Centre.z) + Rotation * rocked;
+        }
+
+        /// <summary>The boat's own rotation, rocking included.</summary>
+        public Quaternion BoatRotation => Rotation * Rock;
 
         void Awake()
         {

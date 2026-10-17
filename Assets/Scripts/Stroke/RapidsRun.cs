@@ -53,7 +53,7 @@ namespace RowVR.Stroke
     }
 
     /// <summary>
-    /// A rapids run (REQ-0007): the river as a list of sections, and the rules of the game.
+    /// A rapids run (#30): the river as a list of sections, and the rules of the game.
     ///
     /// The raft moves at the boat's speed plus the current, which is faster in rapids. In a
     /// rapid, the rower's average power (over a few seconds) against the section's target
@@ -61,7 +61,7 @@ namespace RowVR.Stroke
     /// it comes back to the good line. Well off the line is rough water, which costs speed.
     /// Each rapid scores the fraction of its time spent on the line.
     ///
-    /// Comfort limits from ADR-0012 are built in, not left to the scene: sideways drift is at
+    /// Comfort limits from #90 are built in, not left to the scene: sideways drift is at
     /// most <see cref="RapidsSettings.MaxDriftSpeed"/> and eased, never beyond
     /// <see cref="RapidsSettings.MaxOffsetMetres"/>, and the current changes smoothly between
     /// sections. Engine-free and tested (RapidsRunTests).
@@ -135,7 +135,7 @@ namespace RowVR.Stroke
 
         /// <summary>
         /// Advances the run. <paramref name="raftSpeed"/> is the boat model's visible speed
-        /// (ADR-0010), <paramref name="power"/> its instantaneous power, W.
+        /// (#41), <paramref name="power"/> its instantaneous power, W.
         /// </summary>
         public void Update(double timeSeconds, float raftSpeed, float power)
         {
@@ -257,16 +257,16 @@ namespace RowVR.Stroke
         static float Clamp01(float v) => v < 0f ? 0f : v > 1f ? 1f : v;
     }
 
-    /// <summary>Tuning for <see cref="RapidsRun"/>. The comfort limits come from ADR-0012.</summary>
+    /// <summary>Tuning for <see cref="RapidsRun"/>. The comfort limits come from #90.</summary>
     public sealed class RapidsSettings
     {
-        /// <summary>Fastest sideways drift, m/s (ADR-0012: at most 0.4).</summary>
+        /// <summary>Fastest sideways drift, m/s (#90: at most 0.4).</summary>
         public float MaxDriftSpeed = 0.4f;
 
         /// <summary>How fast sideways speed may change, m/s^2: drift eases in and out.</summary>
         public float MaxDriftAcceleration = 0.25f;
 
-        /// <summary>Furthest off the line the raft goes, metres (ADR-0012: at most 3).</summary>
+        /// <summary>Furthest off the line the raft goes, metres (#90: at most 3).</summary>
         public float MaxOffsetMetres = 3f;
 
         /// <summary>Within this far of the line counts as on it.</summary>

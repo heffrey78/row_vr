@@ -47,9 +47,16 @@ namespace RowVR.Editor
         const string TextShaderPath = "Assets/Shaders/RowVRText.shader";
         const string PanelFontPath = "Assets/Fonts/PatrickHand-Regular.ttf";
         const string FadeShaderPath = "Assets/Shaders/RowVRPassthroughFade.shader";
+        const string DepthMaskShaderPath = "Assets/Shaders/RowVRDepthMask.shader";
+
+        // The rapids' oar raft (#90): the rower sits up on the frame over the tubes, hands about
+        // 0.3 m above the oarlocks, which stand 0.6 m above the water, so the oars lever down to
+        // it. The scull's oarlocks are level with the hands, 0.25 m above the water.
+        const float RaftOarlockAboveWater = 0.6f;
+        const float RaftOarlockBelowHands = 0.3f;
 
         /// <summary>
-        /// Adds the scenery (ADR-0008) to the open scene, or brings existing scenery up to
+        /// Adds the scenery (#39) to the open scene, or brings existing scenery up to
         /// date. Safe to run repeatedly. Save the scene afterwards.
         /// </summary>
         [MenuItem("RowVR/Add Scenery")]
@@ -72,10 +79,10 @@ namespace RowVR.Editor
         const string RapidsScenePath = SceneDirectory + "/Rapids.unity";
 
         /// <summary>
-        /// Builds Assets/Scenes/Rapids.unity (REQ-0007) from the lake scene: same rig, hands,
+        /// Builds Assets/Scenes/Rapids.unity (#30) from the lake scene: same rig, hands, oars,
         /// boat model and sky, turned to face downstream, with the river in place of the lake,
-        /// a raft in place of the scull, a handle in place of the oars, and the rapids' run,
-        /// card and sound. Rebuilds it if it exists: it is generated, not hand-edited.
+        /// an oar raft in place of the scull (#90), and the rapids' run, card and sound.
+        /// Rebuilds it if it exists: it is generated, not hand-edited.
         /// Headless: -executeMethod RowVR.Editor.SceneBootstrap.CreateRapidsBatch
         /// </summary>
         [MenuItem("RowVR/Create Rapids Scene")]
@@ -124,7 +131,7 @@ namespace RowVR.Editor
                 RenderSettings.fogEndDistance = 330f;
                 RenderSettings.fogColor = layers.HorizonColour;
 
-                // The rower: a raft and a handle instead of a scull and oars.
+                // The rower: an oar raft instead of a scull, still with oars in the hands.
                 var go = rig.gameObject;
                 foreach (var drop in new Component[] { go.GetComponent<BoatHullView>(), go.GetComponent<MetricsPanel>() })
                     if (drop != null) Object.DestroyImmediate(drop);
@@ -132,8 +139,16 @@ namespace RowVR.Editor
                 if (grip != null)
                 {
                     var serializedGrip = new SerializedObject(grip);
-                    serializedGrip.FindProperty("mode").enumValueIndex = (int)GripDisplay.GripMode.Handle;
+                    serializedGrip.FindProperty("mode").enumValueIndex = (int)GripDisplay.GripMode.Oars;
                     serializedGrip.ApplyModifiedPropertiesWithoutUndo();
+                }
+                var frame = go.GetComponent<BoatFrame>();
+                if (frame != null)
+                {
+                    var serializedFrame = new SerializedObject(frame);
+                    serializedFrame.FindProperty("waterBelowOarlock").floatValue = RaftOarlockAboveWater;
+                    serializedFrame.FindProperty("oarlockBelowHands").floatValue = RaftOarlockBelowHands;
+                    serializedFrame.ApplyModifiedPropertiesWithoutUndo();
                 }
                 var motion = go.GetComponent<BoatMotion>();
                 if (motion != null)
@@ -143,7 +158,11 @@ namespace RowVR.Editor
                     serializedMotion.ApplyModifiedPropertiesWithoutUndo();
                 }
                 if (go.GetComponent<RapidsMotion>() == null) go.AddComponent<RapidsMotion>();
-                if (go.GetComponent<RaftView>() == null) go.AddComponent<RaftView>();
+                var raft = go.GetComponent<RaftView>();
+                if (raft == null) raft = go.AddComponent<RaftView>();
+                var serializedRaft = new SerializedObject(raft);
+                serializedRaft.FindProperty("depthMaskShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(DepthMaskShaderPath);
+                serializedRaft.ApplyModifiedPropertiesWithoutUndo();
                 if (go.GetComponent<RapidsSound>() == null) go.AddComponent<RapidsSound>();
                 var panel = go.GetComponent<RapidsPanel>();
                 if (panel == null) panel = go.AddComponent<RapidsPanel>();
@@ -232,7 +251,7 @@ namespace RowVR.Editor
                 AssetDatabase.LoadAssetAtPath<Shader>(IllustratedShaderPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
-            // Transparent black: where no layer draws, passthrough will show (ADR-0008).
+            // Transparent black: where no layer draws, passthrough will show (#39).
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
             camera.farClipPlane = 1000f;
@@ -392,7 +411,7 @@ namespace RowVR.Editor
             serializedPassthrough.FindProperty("fadeShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(FadeShaderPath);
             serializedPassthrough.ApplyModifiedPropertiesWithoutUndo();
 
-            // The wrist menu (ADR-0015; it replaced ADR-0013's chest card).
+            // The wrist menu (#46; it replaced #44's chest card).
             var menu = go.GetComponent<WristMenu>();
             if (menu == null) menu = go.AddComponent<WristMenu>();
             var serializedMenu = new SerializedObject(menu);

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// Two sculling oars held in the rower's hands (REQ-0002-FUNC), turning in swivel gates on
+    /// Two sculling oars held in the rower's hands (#25), turning in swivel gates on
     /// the boat's riggers.
     ///
     /// While a stroke is being tracked, each oar's handle end is at the rower's hand: left
@@ -24,7 +24,7 @@ namespace RowVR.Rowing
     ///
     /// The oarlocks, water height and boat direction come from <see cref="BoatFrame"/>, shared
     /// with the hull. "Left" and "right" are from the rower's seat. The geometry is built in
-    /// code, illustrated (ADR-0011) when the scene provides the shader.
+    /// code, illustrated (#42) when the scene provides the shader.
     /// </summary>
     [RequireComponent(typeof(RowingRig), typeof(BoatFrame))]
     public sealed class OarsView : MonoBehaviour

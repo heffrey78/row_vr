@@ -5,7 +5,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The lake's ambience (TASK-0037): water lapping round the boat, a soft breeze, water
+    /// The lake's ambience (#83): water lapping round the boat, a soft breeze, water
     /// running under the hull that rises with speed, and birds calling from the banks now and
     /// then. All of it synthesised by SoundSynth (engine-free, tested), so nothing is
     /// licensed or stored as audio.

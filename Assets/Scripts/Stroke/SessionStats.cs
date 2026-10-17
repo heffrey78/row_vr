@@ -1,6 +1,6 @@
 namespace RowVR.Stroke
 {
-    /// <summary>A finished session's totals, for the end-of-session summary (REQ-0006-FUNC).</summary>
+    /// <summary>A finished session's totals, for the end-of-session summary (#29).</summary>
     public readonly struct SessionSummary
     {
         public readonly double ElapsedSeconds;
@@ -20,10 +20,10 @@ namespace RowVR.Stroke
     }
 
     /// <summary>
-    /// What the rower sees on the panel (REQ-0006-FUNC): elapsed time, distance, strokes,
+    /// What the rower sees on the panel (#29): elapsed time, distance, strokes,
     /// stroke rate, pace per 500 m for the last stroke and on average. It reads like a rowing
     /// monitor: the clock starts at the first catch, pace is per stroke, and a withdrawn catch
-    /// (ADR-0007) is taken back off the count.
+    /// (#38) is taken back off the count.
     ///
     /// A session ends after <see cref="IdleEndSeconds"/> without a stroke. Its totals are kept
     /// as <see cref="LastSummary"/> and the next catch starts a new session. The clock keeps

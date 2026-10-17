@@ -72,7 +72,7 @@ namespace RowVR.Rowing
         XRHandsPoseSource _live;
 
         /// <summary>
-        /// An index fingertip from live hand tracking, for the hands-only menu (ADR-0013). Always
+        /// An index fingertip from live hand tracking, for the hands-only menu (#44). Always
         /// the real hands, even while a recording is replayed: recordings carry palms only.
         /// </summary>
         public bool TryGetFingertip(bool left, out Vector3 worldPosition)
@@ -81,7 +81,7 @@ namespace RowVR.Rowing
             return _live != null && _live.TryGetFingertip(left, out worldPosition);
         }
 
-        /// <summary>A palm's pose from live hand tracking, for the wrist menu (ADR-0015).</summary>
+        /// <summary>A palm's pose from live hand tracking, for the wrist menu (#46).</summary>
         public bool TryGetPalmPose(bool left, out Pose worldPose)
         {
             worldPose = default;

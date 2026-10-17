@@ -3,7 +3,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The water (ADR-0008 Middle layer, TASK-0026): one large surface centred on the rower,
+    /// The water (#39 Middle layer, #72): one large surface centred on the rower,
     /// with a ripple texture that scrolls as the boat travels. The geometry never moves, only
     /// the texture, so the surface is endless and its coordinates stay small.
     ///
@@ -91,7 +91,7 @@ namespace RowVR.Rowing
         }
 
         /// <summary>
-        /// Illustrated water (ADR-0011): flat colour in two soft bands, with sparse drawn
+        /// Illustrated water (#42): flat colour in two soft bands, with sparse drawn
         /// dashes lying across the course, like a pen sketch of ripples. Tileable: every
         /// dash wraps round the texture edges, and the bands use whole-number waves.
         /// </summary>

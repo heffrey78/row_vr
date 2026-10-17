@@ -4,9 +4,9 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The river's voice (REQ-0007): a roar that swells with the current, loudest in the
+    /// The river's voice (#30): a roar that swells with the current, loudest in the
     /// rapids and a murmur in the pools, and spray splashing at the bow in rough water. The
-    /// sound is what makes a rapid feel wild while the view stays steady (ADR-0012).
+    /// sound is what makes a rapid feel wild while the view stays steady (#90).
     /// Synthesised by SoundSynth; mixed under the stroke sounds, which keep priority.
     /// </summary>
     [RequireComponent(typeof(RapidsMotion), typeof(BoatFrame))]
