@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -121,6 +122,17 @@ namespace RowVR.Stroke.Tests
             Assert.That(readout.Right.Label, Is.EqualTo("metres"));
             Assert.That(readout.Left.Value, Is.EqualTo(MetricsFormat.Time(stats.ElapsedSeconds)));
             Assert.That(readout.Footer, Does.StartWith("rate"));
+        }
+
+        [Test]
+        public void Live_distance_counts_in_tens_so_the_cloud_can_settle()
+        {
+            var (stats, progress, _) = Row(Steady, Workout.JustRow());
+            var readout = new SkyReadout();
+            readout.Update(stats, progress, "just row");
+            var tens = Math.Floor(stats.DistanceMetres / 10d) * 10d;
+            Assert.That(readout.Right.Value, Is.EqualTo(MetricsFormat.Distance(tens)));
+            Assert.That(readout.Right.Value, Does.EndWith("0"));
         }
 
         [Test]

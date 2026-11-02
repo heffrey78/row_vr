@@ -33,10 +33,10 @@ namespace RowVR.Stroke
     public sealed class CloudNumerals
     {
         /// <summary>Time constant, seconds, for a puff to drift to its new place.</summary>
-        public float MoveSeconds = 0.7f;
+        public float MoveSeconds = 0.3f;
 
         /// <summary>Time constant, seconds, for a puff to grow or evaporate.</summary>
-        public float GrowSeconds = 0.5f;
+        public float GrowSeconds = 0.2f;
 
         /// <summary>How far an evaporating puff rises, blocks.</summary>
         public float RiseBlocks = 1.2f;

@@ -1,3 +1,5 @@
+using System;
+
 namespace RowVR.Stroke
 {
     /// <summary>One number on the sky board, with its label.</summary>
@@ -43,7 +45,7 @@ namespace RowVR.Stroke
 
             Headline = new ReadoutLine("/500m", MetricsFormat.Split(session.StrokeSplitSeconds));
             Left = new ReadoutLine("time", MetricsFormat.Time(session.ElapsedSeconds));
-            Right = new ReadoutLine("metres", MetricsFormat.Distance(session.DistanceMetres));
+            Right = new ReadoutLine("metres", MetricsFormat.Distance(Steps(session.DistanceMetres, down: true)));
 
             if (session.Active && workout != null && workout.Workout.Kind != WorkoutKind.JustRow)
             {
@@ -58,7 +60,7 @@ namespace RowVR.Stroke
                         Left = new ReadoutLine("time left", MetricsFormat.Time(workout.SecondsLeft));
                         break;
                     case WorkoutKind.Distance:
-                        Right = new ReadoutLine("metres left", MetricsFormat.Distance(workout.MetresLeft));
+                        Right = new ReadoutLine("metres left", MetricsFormat.Distance(Steps(workout.MetresLeft, down: false)));
                         break;
                     case WorkoutKind.Intervals:
                         Left = new ReadoutLine($"{(workout.Resting ? "rest" : "work")} {workout.Interval} of {workout.Workout.Repeats}",
@@ -71,6 +73,17 @@ namespace RowVR.Stroke
                 ? $"rate {MetricsFormat.Rate(session.Rate)}  ·  {session.Strokes} strokes  ·  avg {MetricsFormat.Split(session.AverageSplitSeconds)}"
                 : $"{workoutName}  ·  take a stroke to begin";
         }
+
+        /// <summary>
+        /// Live distance in whole tens. At rowing speed the metres' last digit changes several
+        /// times a second, faster than a cloud can re-form, so it never read. Counting up rounds
+        /// down and counting down rounds up, so neither claims metres not yet rowed. The summary
+        /// keeps exact metres.
+        /// </summary>
+        public const double DistanceStep = 10d;
+
+        static double Steps(double metres, bool down) =>
+            (down ? Math.Floor(metres / DistanceStep) : Math.Ceiling(metres / DistanceStep)) * DistanceStep;
 
         static string IntervalSummary(WorkoutProgress workout)
         {

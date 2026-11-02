@@ -15,9 +15,10 @@ namespace RowVR.Rowing
     ///
     /// The clouds sit far out along the boat's heading, above the horizon. Like the sky dome,
     /// they follow the head's position and only the boat's heading, so they hold a steady place
-    /// in the sky. Every puff is one instance of a single painted disc, drawn with
-    /// RenderMeshInstanced over a shaded silhouette of the same puffs: two draw calls, nothing
-    /// rebuilt per frame.
+    /// in the sky. Every puff is a painted disc over a larger shaded one, all in one mesh that is
+    /// refilled each frame (about 15k vertices; one draw call). It was drawn instanced at first,
+    /// which rendered in the Editor but not on the Quest: plain meshes are what every other
+    /// part of the scene already draws with there.
     ///
     /// They belong to the virtual scene: when passthrough fades the room in, they fade with it.
     /// The class keeps its old name so the scenes' wiring holds without regenerating them.
@@ -42,17 +43,24 @@ namespace RowVR.Rowing
         [SerializeField] float headlineBlock = 5f;
 
         const int MaxPuffs = 1024;
+        const int Sides = 24;
+        // A disc: its middle and a closed ring. Each puff is two: the shaded one behind, then the body.
+        const int DiscVertices = Sides + 2;
+        const int DiscIndices = Sides * 3;
 
         BoatMotion _motion;
         BoatFrame _frame;
         SceneryLayers _scenery;
         Material _cloudMaterial;
         Material _textMaterial;
-        Mesh _puff, _shadow;
         Transform _captions;
+        Mesh _clouds;
+        Vector3[] _disc;
+        Vector3[] _vertices;
+        Color[] _colours;
+        int[] _triangles;
+        int _drawn = -1;
         readonly SkyReadout _readout = new SkyReadout();
-        readonly Matrix4x4[] _matrices = new Matrix4x4[MaxPuffs];
-        readonly Matrix4x4[] _shadows = new Matrix4x4[MaxPuffs];
         CloudLine _headline, _left, _right;
         TextMesh _headlineLabel, _leftLabel, _rightLabel;
 
@@ -80,7 +88,6 @@ namespace RowVR.Rowing
             }
             _cloudMaterial.SetFloat("_FogAmount", 0f);
             _cloudMaterial.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
-            _cloudMaterial.enableInstancing = true;
 
             font.RequestCharactersInTexture("0123456789:.,-/ abcdefghijklmnopqrstuvwxyz", 96);
             _textMaterial = new Material(textShader) { name = "Sky Captions", mainTexture = font.material.mainTexture };
@@ -92,8 +99,7 @@ namespace RowVR.Rowing
         {
             Font.textureRebuilt -= OnFontRebuilt;
             if (_captions != null) Destroy(_captions.gameObject);
-            if (_puff != null) Destroy(_puff);
-            if (_shadow != null) Destroy(_shadow);
+            if (_clouds != null) Destroy(_clouds);
         }
 
         // A dynamic font re-packs its atlas when it needs new glyphs; point at the new one.
@@ -122,38 +128,55 @@ namespace RowVR.Rowing
             Caption(_rightLabel, _readout.Right.Label);
 
             var count = 0;
-            count = Draw(_headline, _readout.Headline.Value, position, rotation, count);
-            count = Draw(_left, _readout.Left.Value, position, rotation, count);
-            count = Draw(_right, _readout.Right.Value, position, rotation, count);
-            if (count == 0) return;
-
-            var parameters = new RenderParams(_cloudMaterial)
-            {
-                layer = _scenery.Near.gameObject.layer,
-                shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
-                receiveShadows = false,
-                worldBounds = new Bounds(position, Vector3.one * headlineBlock * 60f),
-            };
-            Graphics.RenderMeshInstanced(parameters, _shadow, 0, _shadows, count);
-            Graphics.RenderMeshInstanced(parameters, _puff, 0, _matrices, count);
+            count = Fill(_headline, _readout.Headline.Value, count);
+            count = Fill(_left, _readout.Left.Value, count);
+            count = Fill(_right, _readout.Right.Value, count);
+            Upload(count);
         }
 
-        int Draw(CloudLine line, string text, Vector3 position, Quaternion rotation, int count)
+        // Writes a line's puffs into the mesh, in the captions' space, and returns the new count.
+        int Fill(CloudLine line, string text, int count)
         {
             line.Cloud.SetText(text);
             line.Cloud.Update(Time.timeAsDouble, Time.deltaTime);
             foreach (var puff in line.Cloud.Puffs)
             {
                 if (count >= MaxPuffs) break;
-                var local = line.Offset + puff.Position.ToVector3() * line.Block;
+                var centre = line.Offset + puff.Position.ToVector3() * line.Block;
                 var radius = puff.Radius * line.Block;
-                _matrices[count] = Matrix4x4.TRS(position + rotation * local, rotation, Vector3.one * radius);
                 // Behind every body puff, a larger shaded one, a little low: together they draw
                 // one shaded silhouette round the whole number, so it reads as a single cloud.
-                var behind = local + new Vector3(0f, -0.1f * radius, line.Block);
-                _shadows[count++] = Matrix4x4.TRS(position + rotation * behind, rotation, Vector3.one * (radius * 1.14f));
+                Disc(count * 2, centre + new Vector3(0f, -0.1f * radius, line.Block), radius * 1.14f);
+                Disc(count * 2 + 1, centre, radius);
+                count++;
             }
             return count;
+        }
+
+        void Disc(int disc, Vector3 centre, float radius)
+        {
+            var first = disc * DiscVertices;
+            for (var v = 0; v < DiscVertices; v++) _vertices[first + v] = centre + _disc[v] * radius;
+        }
+
+        void Upload(int count)
+        {
+            var vertices = count * 2 * DiscVertices;
+            const UnityEngine.Rendering.MeshUpdateFlags quiet = UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds;
+            if (count != _drawn)
+            {
+                // The size changed: indices must never point past the vertices, so start clean.
+                _clouds.Clear();
+                _clouds.SetVertices(_vertices, 0, vertices, quiet);
+                _clouds.SetColors(_colours, 0, vertices, quiet);
+                _clouds.SetTriangles(_triangles, 0, count * 2 * DiscIndices, 0, false);
+                _clouds.bounds = new Bounds(Vector3.zero, Vector3.one * headlineBlock * 60f);
+                _drawn = count;
+            }
+            else if (count > 0)
+            {
+                _clouds.SetVertices(_vertices, 0, vertices, quiet);
+            }
         }
 
         static void Caption(TextMesh label, string text)
@@ -168,8 +191,6 @@ namespace RowVR.Rowing
             var shade = palette != null ? palette.cloudShade : new Color(0.86f, 0.84f, 0.88f);
             var ink = palette != null ? palette.ink : new Color(0.17f, 0.14f, 0.16f);
             var zenith = palette != null ? palette.skyZenith : new Color(0.55f, 0.7f, 0.84f);
-            _puff = PuffMesh(light, Color.Lerp(light, shade, 0.45f));
-            _shadow = PuffMesh(shade, shade);
 
             // Line space, metres: +x to the rower's right, +y up, the pace cloud's middle at 0.
             var side = headlineBlock * 0.52f;
@@ -189,36 +210,61 @@ namespace RowVR.Rowing
             var sideBottom = sideY - BlockFont.Rows * side * 0.5f - gap;
             _leftLabel = Text("Left Caption", new Vector3(-sideX, sideBottom, 0f), headlineBlock * 0.1f, caption);
             _rightLabel = Text("Right Caption", new Vector3(sideX, sideBottom, 0f), headlineBlock * 0.1f, caption);
+
+            BuildClouds(light, shade);
         }
 
         /// <summary>
-        /// One painted puff, unit radius, facing -Z: <paramref name="light"/> in the middle and
-        /// toward the top, easing to <paramref name="shade"/> underneath.
+        /// The mesh every puff is written into, under the captions so it moves with them. Colours
+        /// and triangles repeat per puff, so they are laid out once for the most puffs there can
+        /// be; each frame only the vertices change.
         /// </summary>
-        static Mesh PuffMesh(Color light, Color shade)
+        void BuildClouds(Color light, Color shade)
         {
-            const int sides = 24;
-            var vertices = new Vector3[sides + 2];
-            var colours = new Color[sides + 2];
-            var triangles = new int[sides * 3];
-            vertices[0] = new Vector3(0f, 0.15f, 0f);
-            colours[0] = SkyDome.ToVertexColour(light);
-            for (var s = 0; s <= sides; s++)
+            _disc = new Vector3[DiscVertices];
+            var body = new Color[DiscVertices];
+            var shadow = new Color[DiscVertices];
+            // The middle sits a little high, so the light gathers toward the top.
+            _disc[0] = new Vector3(0f, 0.15f, 0f);
+            body[0] = SkyDome.ToVertexColour(light);
+            shadow[0] = SkyDome.ToVertexColour(shade);
+            var underneath = Color.Lerp(light, shade, 0.45f);
+            for (var s = 0; s <= Sides; s++)
             {
-                var a = 2f * Mathf.PI * s / sides;
+                var a = 2f * Mathf.PI * s / Sides;
                 var y = Mathf.Sin(a);
-                vertices[s + 1] = new Vector3(Mathf.Cos(a), y, 0f);
-                colours[s + 1] = SkyDome.ToVertexColour(Color.Lerp(shade, light, Mathf.Clamp01(y * 0.6f + 0.6f)));
-                if (s < sides)
+                _disc[s + 1] = new Vector3(Mathf.Cos(a), y, 0f);
+                body[s + 1] = SkyDome.ToVertexColour(Color.Lerp(underneath, light, Mathf.Clamp01(y * 0.6f + 0.6f)));
+                shadow[s + 1] = shadow[0];
+            }
+
+            var discs = MaxPuffs * 2;
+            _vertices = new Vector3[discs * DiscVertices];
+            _colours = new Color[discs * DiscVertices];
+            _triangles = new int[discs * DiscIndices];
+            for (var d = 0; d < discs; d++)
+            {
+                var first = d * DiscVertices;
+                var colours = d % 2 == 0 ? shadow : body;
+                for (var v = 0; v < DiscVertices; v++) _colours[first + v] = colours[v];
+                for (var s = 0; s < Sides; s++)
                 {
-                    triangles[s * 3] = 0;
-                    triangles[s * 3 + 1] = s + 1;
-                    triangles[s * 3 + 2] = s + 2;
+                    var i = d * DiscIndices + s * 3;
+                    _triangles[i] = first;
+                    _triangles[i + 1] = first + s + 1;
+                    _triangles[i + 2] = first + s + 2;
                 }
             }
-            var mesh = new Mesh { name = "Cloud Puff", vertices = vertices, colors = colours, triangles = triangles };
-            mesh.RecalculateBounds();
-            return mesh;
+
+            _clouds = new Mesh { name = "Cloud Numerals", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            _clouds.MarkDynamic();
+            var go = new GameObject("Cloud Numerals");
+            go.transform.SetParent(_captions, false);
+            go.AddComponent<MeshFilter>().sharedMesh = _clouds;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = _cloudMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
         }
 
         TextMesh Text(string name, Vector3 position, float size, Color colour)
