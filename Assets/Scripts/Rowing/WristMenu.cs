@@ -64,6 +64,8 @@ namespace RowVR.Rowing
         Transform _menu;
         Material _textMaterial, _buttonMaterial, _selectedMaterial;
         TextMesh _resistanceValue;
+        TextMesh _numbers;
+        MetricsPanel _panel;
         readonly List<Button> _buttons = new List<Button>();
         readonly WristMenuGate _gate = new WristMenuGate();
         AudioSource _tick;
@@ -73,6 +75,7 @@ namespace RowVR.Rowing
             _rig = GetComponent<RowingRig>();
             _motion = GetComponent<BoatMotion>();
             _passthrough = GetComponent<PassthroughFade>();
+            _panel = GetComponent<MetricsPanel>();
             _scenery = FindFirstObjectByType<SceneryLayers>();
             if (font == null || textShader == null)
             {
@@ -205,6 +208,10 @@ namespace RowVR.Rowing
             }
             var r = "res " + _motion.Resistance;
             if (_resistanceValue.text != r) _resistanceValue.text = r;
+
+            // Rate, strokes and average pace left the sky for here (#102), a line each.
+            var numbers = _panel != null && _panel.Footer != null ? _panel.Footer.Replace("  ·  ", "\n") : "";
+            if (_numbers.text != numbers) _numbers.text = numbers;
         }
 
         void Build()
@@ -250,6 +257,8 @@ namespace RowVR.Rowing
                 new Vector3(Mathf.Cos(degrees * Mathf.Deg2Rad) * radiusAt, Mathf.Sin(degrees * Mathf.Deg2Rad) * radiusAt - 0.03f, 0f);
             AddButton("-", Arc(InnerRadius, 155f), ink, () => SetResistance(_motion.Resistance - 1));
             _resistanceValue = Text("res 5", Arc(InnerRadius, 122f) + new Vector3(0f, 0f, -0.004f), 0.0022f, ink);
+            _numbers = Text("", new Vector3(0f, -0.026f, -0.004f), 0.0016f, ink);
+            _numbers.anchor = TextAnchor.LowerCenter;
             AddButton("+", Arc(InnerRadius, 90f), ink, () => SetResistance(_motion.Resistance + 1));
             AddButton("back to scene", Arc(InnerRadius, 40f), ink, () => _passthrough?.Dismiss(),
                       shown: () => _passthrough != null && _passthrough.Fade > 0.05f, width: 0.075f);
