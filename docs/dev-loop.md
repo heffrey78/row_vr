@@ -285,7 +285,7 @@ ordering advice stands.
 
 #### Frame rate on the headset
 
-MQDH's profiler does not exist on Linux (ADR-0003), but the Quest runtime logs a
+MQDH's profiler does not exist on Linux (#34), but the Quest runtime logs a
 performance line every second, and adb can read it:
 
 ```sh
@@ -297,7 +297,7 @@ Filter by the app's pid: the system shell logs the same lines under its own. Eac
 `FPS=` (achieved/target), `Stale=` (frames the compositor had to reuse), `GPU%=` (GPU
 utilisation), and `CPU&GPU=` (frame time, ms). At 72 Hz the frame budget is 13.9 ms.
 
-Measured 2026-09-29, scenery (ADR-0008) plus oars and sound, 102 s while rowing 23 strokes:
+Measured 2026-09-29, scenery (#39) plus oars and sound, 102 s while rowing 23 strokes:
 
 | | |
 |---|---|
@@ -307,7 +307,7 @@ Measured 2026-09-29, scenery (ADR-0008) plus oars and sound, 102 s while rowing 
 | APK | 157 MB (150 MB before the scenery) |
 | Build after adding the scenery | 10:02, a new shader and scripts make it near-cold |
 
-Draw calls and triangle counts are not in the runtime's line. ADR-0008's budget of 100
+Draw calls and triangle counts are not in the runtime's line. #39's budget of 100
 draw calls and 150k triangles is unmeasured, but the GPU is far from its limit.
 
 Individually:
@@ -399,7 +399,7 @@ very slow piece, and one where you stop mid-stroke. The last two are where detec
 
 ## 5b. Passthrough and the boundary
 
-When you let go of the handle, the room fades in (REQ-0005, ADR-0014), and it fades out at the
+When you let go of the handle, the room fades in (#28, #45), and it fades out at the
 end of your first stroke. It uses the Quest's passthrough through Unity's OpenXR Meta package,
 and `make bootstrap` turns on the two features it needs (Meta Quest: Session and Camera). The
 menu and the numbers stay drawn over the room.

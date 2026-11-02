@@ -12,7 +12,7 @@ namespace RowVR.Stroke.Tests
     ///
     /// STANDING, ARMS ONLY - not rowing-machine data. The rower stood and rowed with their
     /// arms: ~0.4-0.5m of handle travel, head roughly still, open hands, ~28 spm, drive and
-    /// recovery roughly 1:1. The app's primary use is a rowing machine (REQ-0001-FUNC), where
+    /// recovery roughly 1:1. The app's primary use is a rowing machine (#24), where
     /// the stroke is a full leg-back-arm movement with the head sliding with the seat and the
     /// hands gripping a handle. These fixtures remain valid as regression tests of the
     /// detector's logic against real Quest 3 tracking noise; they are not evidence that it is

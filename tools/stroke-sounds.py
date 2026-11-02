@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuilds the recorded catch and finish sounds from their sources (TASK-0022).
+"""Rebuilds the recorded catch and finish sounds from their sources (#68).
 
 The takes come from one CC0 pack on Freesound, "Water Paddle" by EpicWizard: single paddle
 strokes in a lake, recorded one at a time. Each is cut to the part the app needs and

@@ -5,12 +5,12 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The raft for the rapids (REQ-0007): an inflatable tube round the rower, a floor and a
+    /// The raft for the rapids (#30): an inflatable tube round the rower, a floor and a
     /// thwart under them, facing downstream. Sits on the water at BoatFrame, and never rolls,
-    /// pitches or bobs (ADR-0012): rough water is shown by spray bursting round the bow when
+    /// pitches or bobs (#43): rough water is shown by spray bursting round the bow when
     /// the raft is off the line in a rapid, not by moving the rower's view.
     ///
-    /// Built in code, illustrated (ADR-0011).
+    /// Built in code, illustrated (#42).
     /// </summary>
     [RequireComponent(typeof(BoatFrame))]
     public sealed class RaftView : MonoBehaviour

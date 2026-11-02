@@ -22,7 +22,7 @@ namespace RowVR.Editor
     ///   Unity -batchmode -projectPath . -executeMethod RowVR.Editor.Preview.CaptureBatch
     ///         [-previewSeconds 16] [-previewOut .devloop/preview]
     ///         [-previewFrames 0] [-previewFps 15] [-previewScene Assets/Scenes/Row.unity]
-    ///         [-previewView ahead|level|menu] [-previewWristMenu]
+    ///         [-previewView ahead|level|menu] [-previewWristMenu] [-previewControllerNote]
     ///
     /// With -previewFrames N it also writes a sequence, frame_000.png onward, from the rower's
     /// eye: N frames at -previewFps of game time each, whatever the machine renders at
@@ -54,6 +54,7 @@ namespace RowVR.Editor
             _fps = Math.Max(1, (int)FloatArg("-previewFps", 15f));
             // No hands headless: pin the wrist menu in front of the head to render its layout.
             WristMenu.PreviewInFrontOfHead = Array.IndexOf(Environment.GetCommandLineArgs(), "-previewWristMenu") >= 0;
+            ControllerNote.PreviewShown = Array.IndexOf(Environment.GetCommandLineArgs(), "-previewControllerNote") >= 0;
             Directory.CreateDirectory(_outDir);
 
             EditorSceneManager.OpenScene(StringArg("-previewScene", ScenePath));
@@ -132,7 +133,7 @@ namespace RowVR.Editor
             Shoot(xrCamera, "eye-forward", head, Quaternion.LookRotation(forward + Vector3.down * 0.25f));
             Shoot(xrCamera, "eye-left", head, Quaternion.LookRotation(-right + forward * 0.35f + Vector3.down * 0.3f));
             Shoot(xrCamera, "eye-back", head, Quaternion.LookRotation(-forward + Vector3.down * 0.1f));
-            // Down toward the chest, where the menu card sits while resting (ADR-0013).
+            // Down toward the chest, where the menu card sits while resting (#44).
             Shoot(xrCamera, "eye-down", head, Quaternion.LookRotation(forward - right * 0.1f + Vector3.down * 0.9f));
             var outside = head - forward * 4.5f + right * 3.5f + Vector3.up * 2.2f;
             Shoot(xrCamera, "boat", outside, Quaternion.LookRotation(head + Vector3.down * 0.8f - outside));

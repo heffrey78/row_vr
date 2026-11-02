@@ -51,7 +51,7 @@ namespace RowVR.Editor
             // advertises hand input the same way the shell does.
             ("com.unity.openxr.feature.input.handinteraction", "Hand Interaction Profile"),
 
-            // Passthrough (REQ-0005, ADR-0014), from com.unity.xr.meta-openxr: the camera
+            // Passthrough (#28, #45), from com.unity.xr.meta-openxr: the camera
             // feature is Quest passthrough, driven by AR Foundation's ARCameraManager; the
             // session feature runs the AR session it needs.
             ("com.unity.openxr.feature.arfoundation-meta-session", "Meta Quest: Session"),

@@ -106,7 +106,7 @@ namespace RowVR.Rowing
         }
 
         /// <summary>
-        /// The index fingertip of one hand, in world space, for pressing menu buttons (ADR-0013).
+        /// The index fingertip of one hand, in world space, for pressing menu buttons (#44).
         /// Uses whichever subsystem the palms came from; false if that hand is not tracked.
         /// </summary>
         public bool TryGetFingertip(bool left, out Vector3 worldPosition)
@@ -120,7 +120,7 @@ namespace RowVR.Rowing
         }
 
         /// <summary>
-        /// One hand's palm pose in world space, for the wrist menu (ADR-0015). In XR Hands the
+        /// One hand's palm pose in world space, for the wrist menu (#46). In XR Hands the
         /// palm joint's up points out of the back of the hand, so the palm faces -up.
         /// </summary>
         public bool TryGetPalmPose(bool left, out Pose worldPose)

@@ -8,6 +8,7 @@
 #   make preview GIF=1                 # also a ~6 s GIF from the rower's eye (needs ffmpeg)
 #   make preview SCENE=Assets/Scenes/Rapids.unity
 #   make preview WRIST=1               # pin the wrist menu in front of the head to see its layout
+#   make preview NOTE=1                # show the controllers-in-hand note
 #   make preview GIF=1 VIEW=menu       # the GIF looks down at the menu (or VIEW=level, straight ahead)
 #
 # Needs a display (it renders on the GPU, so no -nographics), and the Editor must not
@@ -38,7 +39,8 @@ start=$SECONDS
   -previewFps 15 \
   -previewScene "${SCENE:-Assets/Scenes/Row.unity}" \
   -previewView "${VIEW:-ahead}" \
-  $([[ -n "${WRIST:-}" ]] && echo -previewWristMenu) &
+  $([[ -n "${WRIST:-}" ]] && echo -previewWristMenu) \
+  $([[ -n "${NOTE:-}" ]] && echo -previewControllerNote) &
 unity_pid=$!
 
 # Unity can take minutes to shut down after a batch run, and on this machine it has hung in

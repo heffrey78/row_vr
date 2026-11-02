@@ -7,12 +7,12 @@ using UnityEngine.SceneManagement;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The wrist menu (ADR-0015, replacing ADR-0013's card): turn the left hand over, palm
+    /// The wrist menu (#46, replacing #44's card): turn the left hand over, palm
     /// toward your face, and a fan of buttons opens above the palm. Poke them with the right
     /// index fingertip.
     ///
     /// Inner arc: resistance -, its value, +, and "back to the scene" while the room is
-    /// showing (passthrough, ADR-0014). Outer arc: the workouts, then lake and rapids. Choices
+    /// showing (passthrough, #45). Outer arc: the workouts, then lake and rapids. Choices
     /// persist (RowerSettings).
     ///
     /// When it shows is WristMenuGate (engine-free, tested): a held palm-up, never while
@@ -84,6 +84,9 @@ namespace RowVR.Rowing
             _textMaterial = new Material(textShader) { name = "Wrist Menu Lettering", mainTexture = font.material.mainTexture };
             Font.textureRebuilt += OnFontRebuilt;
 
+            // The menu needs hands; holding the controllers takes them away (#103).
+            if (GetComponent<ControllerNote>() == null) gameObject.AddComponent<ControllerNote>().Init(font, textShader);
+
             _tick = new GameObject("Wrist Menu Tick").AddComponent<AudioSource>();
             _tick.playOnAwake = false;
             _tick.spatialBlend = 0.6f;
@@ -92,7 +95,7 @@ namespace RowVR.Rowing
             _tick.clip.SetData(tick, 0);
 
             Build();
-            // Stays readable over the room when passthrough fades in (ADR-0014).
+            // Stays readable over the room when passthrough fades in (#45).
             PassthroughFade.KeepVisible(_menu);
             PassthroughFade.KeepVisible(_buttonMaterial);
             PassthroughFade.KeepVisible(_selectedMaterial);

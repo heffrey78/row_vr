@@ -5,20 +5,20 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The blade going in and coming out, as sound (REQ-0002-FUNC). Hands-only means no
+    /// The blade going in and coming out, as sound (#25). Hands-only means no
     /// controller haptics, so this is what gives each stroke a physical beat.
     ///
     /// Plays on <see cref="RowingRig.Catch"/> and <see cref="RowingRig.Finish"/> on the frame
     /// the detector reports them. Android's audio output latency comes on top of that and is
-    /// measured on the device (TASK-0020); the build asks for the smallest DSP buffer
+    /// measured on the device (#66); the build asks for the smallest DSP buffer
     /// (ProjectBootstrap) to keep it down.
     ///
     /// A catch can be withdrawn up to ~1.5 s later when it turns out the hands let go of the
-    /// handle (ADR-0007). Its catch sound has already played by then, and delaying every
+    /// handle (#38). Its catch sound has already played by then, and delaying every
     /// catch to wait would ruin the timing, so that is accepted. What is suppressed is the
     /// finish: one only sounds for a drive whose catch was heard and not taken back.
     ///
-    /// The sounds are recordings of a paddle in a lake (TASK-0022): several takes of the
+    /// The sounds are recordings of a paddle in a lake (#68): several takes of the
     /// entry for the catch and of a soft slosh for the finish, never the same take twice
     /// running. They live in Resources/Audio/Stroke, where SOURCES.md records their licence
     /// (CC0), and tools/stroke-sounds.py rebuilds them. If a folder is empty, the takes

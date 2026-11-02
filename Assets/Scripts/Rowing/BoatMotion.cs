@@ -4,14 +4,14 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// Runs the boat (REQ-0003-FUNC) and the session numbers (REQ-0006-FUNC) from the rig, and
+    /// Runs the boat (#26) and the session numbers (#29) from the rig, and
     /// drives the scenery. Both models are engine-free and tested against the rowing-machine
     /// recordings (BoatModelTests, SessionStatsTests); this only feeds them every frame, the
     /// way those tests do: an update with the detector's state when there is a pose, a glide
     /// when there is not.
     ///
     /// The scenery moves at the boat's visible speed, smoothed so there is no per-stroke lurch
-    /// (ADR-0010). Distance and pace on the panel come from the true speed.
+    /// (#41). Distance and pace on the panel come from the true speed.
     /// </summary>
     [DefaultExecutionOrder(-40)]
     [RequireComponent(typeof(RowingRig))]
@@ -47,7 +47,7 @@ namespace RowVR.Rowing
             _scenery = FindFirstObjectByType<SceneryLayers>();
             Boat = new BoatModel();
             Session = new SessionStats();
-            // The menu's saved choices (REQ-0008); the Inspector value is only the first default.
+            // The menu's saved choices (#31); the Inspector value is only the first default.
             if (UnityEngine.PlayerPrefs.HasKey("rowvr.resistance")) resistance = RowerSettings.Resistance;
             Workout = new WorkoutProgress(RowerSettings.Workout);
             if (_scenery != null && driveScenery) _scenery.UseDebugSpeed = false;

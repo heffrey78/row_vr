@@ -3,7 +3,7 @@ using RowVR.Stroke;
 
 namespace RowVR.Stroke.Tests
 {
-    /// <summary>The hands-only menu's logic (REQ-0008, ADR-0013): pressing, and workouts.</summary>
+    /// <summary>The hands-only menu's logic (#31, #44): pressing, and workouts.</summary>
     [TestFixture]
     public class PressDetectorTests
     {
