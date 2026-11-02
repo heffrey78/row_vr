@@ -37,10 +37,10 @@ namespace RowVR.Rowing
         [SerializeField] float distance = 160f;
 
         [Tooltip("Degrees above the horizon of the headline's middle.")]
-        [SerializeField] float elevation = 20f;
+        [SerializeField] float elevation = 22f;
 
         [Tooltip("Size of one block of the headline, metres. Five blocks make a digit's height.")]
-        [SerializeField] float headlineBlock = 3.2f;
+        [SerializeField] float headlineBlock = 4f;
 
         [Tooltip("Share of the scene's fog the board takes, so it reads as far away.")]
         [Range(0f, 1f)]
@@ -117,14 +117,15 @@ namespace RowVR.Rowing
         void Build()
         {
             var palette = _scenery != null ? _scenery.Palette : null;
-            var paper = palette != null ? palette.paper : new Color(0.97f, 0.94f, 0.86f);
+            // The oar blades' red: it stands out against a pale sky, where paper vanished.
+            var colour = palette != null ? palette.blade : new Color(0.84f, 0.36f, 0.26f);
             var ink = palette != null ? palette.ink : new Color(0.17f, 0.14f, 0.16f);
 
             _board = new GameObject("Sky Numbers").transform;
             if (_scenery != null) _board.SetParent(_scenery.Near, false);
 
-            var blocks = IllustratedMaterials.Create(_scenery, "Sky Number Blocks", paper, true, headlineBlock * 0.07f)
-                         ?? new Material(Shader.Find("Universal Render Pipeline/Unlit")) { color = paper };
+            var blocks = IllustratedMaterials.Create(_scenery, "Sky Number Blocks", colour, true, headlineBlock * 0.07f)
+                         ?? new Material(Shader.Find("Universal Render Pipeline/Unlit")) { color = colour };
             if (blocks.HasProperty("_FogAmount")) blocks.SetFloat("_FogAmount", fog);
             // Blank glyphs (space, the thousands gap) get no mesh; their slots stay off.
             foreach (var c in Characters)
@@ -140,15 +141,16 @@ namespace RowVR.Rowing
             _right = new BlockLine(_board, "Right", new Vector3(sideOffset, sideRow, 0f), side, _glyphs, blocks);
 
             var labelGap = headlineBlock * 0.45f;
-            _headlineLabel = Text("Headline Label", new Vector3(0f, -BlockFont.Rows * headlineBlock * 0.5f - labelGap, 0f), headlineBlock * 0.11f, ink);
-            _leftLabel = Text("Left Label", new Vector3(-sideOffset, sideRow - BlockFont.Rows * side * 0.5f - labelGap, 0f), headlineBlock * 0.08f, ink);
-            _rightLabel = Text("Right Label", new Vector3(sideOffset, sideRow - BlockFont.Rows * side * 0.5f - labelGap, 0f), headlineBlock * 0.08f, ink);
-            _footer = Text("Footer", new Vector3(0f, sideRow - BlockFont.Rows * side * 0.5f - labelGap * 4.5f, 0f), headlineBlock * 0.08f, ink);
+            _headlineLabel = Text("Headline Label", new Vector3(0f, -BlockFont.Rows * headlineBlock * 0.5f - labelGap, 0f), headlineBlock * 0.17f, ink);
+            _leftLabel = Text("Left Label", new Vector3(-sideOffset, sideRow - BlockFont.Rows * side * 0.5f - labelGap, 0f), headlineBlock * 0.13f, ink);
+            _rightLabel = Text("Right Label", new Vector3(sideOffset, sideRow - BlockFont.Rows * side * 0.5f - labelGap, 0f), headlineBlock * 0.13f, ink);
+            _footer = Text("Footer", new Vector3(0f, sideRow - BlockFont.Rows * side * 0.5f - labelGap * 5f, 0f), headlineBlock * 0.12f, ink);
         }
 
         /// <summary>
         /// One glyph at one block per metre, its bottom-left at the origin: a box per filled
-        /// cell, a little smaller than the cell and a little off-true, like stacked paper blocks.
+        /// cell, a little off-true, like stacked blocks. Boxes fill their cells so neighbours
+        /// merge into one inked shape; with gaps, the ink between them broke digits into tiles.
         /// </summary>
         static Mesh BuildGlyph(char c)
         {
@@ -159,9 +161,9 @@ namespace RowVR.Rowing
             {
                 if (!BlockFont.Filled(c, column, row)) continue;
                 var centre = new Vector3(column + 0.5f, BlockFont.Rows - row - 0.5f, 0f)
-                             + new Vector3(Jitter(random, 0.04f), Jitter(random, 0.04f), Jitter(random, 0.08f));
-                var size = new Vector3(0.88f + Jitter(random, 0.04f), 0.88f + Jitter(random, 0.04f), 0.6f);
-                Box(shape, centre, size, Quaternion.Euler(0f, 0f, Jitter(random, 3f)), Color.white);
+                             + new Vector3(Jitter(random, 0.02f), Jitter(random, 0.02f), Jitter(random, 0.06f));
+                var size = new Vector3(1.02f + Jitter(random, 0.02f), 1.02f + Jitter(random, 0.02f), 0.6f);
+                Box(shape, centre, size, Quaternion.Euler(0f, 0f, Jitter(random, 1.5f)), Color.white);
             }
             return shape.Build("Sky Glyph " + c);
         }

@@ -725,8 +725,8 @@ MonoBehaviour:
   font: {fileID: 12800000, guid: a70530211bbe4001b2c57187a89779df, type: 3}
   textShader: {fileID: 4800000, guid: 3ab63c2bcb86422ca620d145e76b72b3, type: 3}
   distance: 160
-  elevation: 20
-  headlineBlock: 3.2
+  elevation: 22
+  headlineBlock: 4
   fog: 0.35
 --- !u!114 &1483306201
 MonoBehaviour:
