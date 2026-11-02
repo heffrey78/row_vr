@@ -20,7 +20,8 @@ resistance and scene (#31), both checked in headless renders and an Android buil
 ## Rowing with it
 
 Put the headset on, sit at the machine, take the handle, and row. The first stroke starts the
-session; the card to your right shows time, pace per 500 m, distance, rate and strokes.
+session. Glance up: your pace per 500 m stands in the sky ahead in big blocks, with time and
+distance beside it and rate and strokes beneath. When you stop, it shows the session's summary.
 
 **The menu.** Let go of the handle and rest for a few seconds: a card appears low in front of
 you. Poke its buttons with a fingertip to choose:

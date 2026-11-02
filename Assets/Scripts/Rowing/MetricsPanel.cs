@@ -1,20 +1,27 @@
+using System.Collections.Generic;
 using RowVR.Stroke;
 using UnityEngine;
 
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The rower's numbers (#29): a hand-lettered card fixed in the boat, off to the
-    /// rower's right, like a monitor clipped to the rigger. It does not follow the head, so it
-    /// is somewhere to glance at, not something in the way.
+    /// The rower's numbers (#29), as big block digits high in the sky (#99). It used to be a
+    /// small hand-lettered card in the boat, which the owner found small and in the line of
+    /// sight. Now pace per 500 m is the headline, with time to its lower left and distance to
+    /// its lower right, each labelled, and a footer line for rate, strokes and average pace.
     ///
-    /// While rowing it shows time, pace per 500 m, distance, and a line with rate, strokes
-    /// and average pace. When a session ends it becomes the session's summary until the next
-    /// stroke. The numbers come from BoatMotion's engine-free models; formatting is
-    /// MetricsFormat, both tested.
+    /// The board sits far out along the boat's heading, above the horizon. Like the sky dome,
+    /// it follows the head's position and only the boat's heading, so it holds a steady place
+    /// in the sky and never swims with the stroke. What it shows comes from SkyReadout, and the
+    /// block lettering from BlockFont, both engine-free and tested.
     ///
-    /// Lettering is Patrick Hand (SIL OFL, Assets/Fonts), drawn with RowVR/Text so it renders
-    /// in both eyes under single-pass stereo. The card is RowVR/Illustrated paper with ink.
+    /// Each glyph is one mesh built once; each character slot swaps between them, so changing
+    /// numbers allocate nothing. Blocks are RowVR/Illustrated paper with ink; labels are Patrick
+    /// Hand (SIL OFL, Assets/Fonts) drawn with RowVR/Text so they render in both eyes under
+    /// single-pass stereo.
+    ///
+    /// It belongs to the virtual scene: when passthrough fades the room in, it fades with it.
+    /// The class keeps its old name so the scenes' wiring holds without regenerating them.
     /// </summary>
     [RequireComponent(typeof(BoatMotion), typeof(BoatFrame))]
     public sealed class MetricsPanel : MonoBehaviour
@@ -25,31 +32,36 @@ namespace RowVR.Rowing
         [Tooltip("RowVR/Text. Set by RowVR > Add Scenery; a scene reference keeps it in the build.")]
         [SerializeField] Shader textShader;
 
-        [Header("Placement, in the boat (metres)")]
-        [SerializeField] float towardStern = 1.15f;
-        [SerializeField] float toRight = 0.62f;
-        [Tooltip("Height relative to the rower's average eye height.")]
-        [SerializeField] float belowEyes = 0.18f;
+        [Header("Placement")]
+        [Tooltip("Distance from the eyes to the board, metres. Far enough to sit at optical infinity.")]
+        [SerializeField] float distance = 160f;
 
-        const float CardWidth = 0.36f;
-        const float CardHeight = 0.28f;
+        [Tooltip("Degrees above the horizon of the headline's middle.")]
+        [SerializeField] float elevation = 20f;
+
+        [Tooltip("Size of one block of the headline, metres. Five blocks make a digit's height.")]
+        [SerializeField] float headlineBlock = 3.2f;
+
+        [Tooltip("Share of the scene's fog the board takes, so it reads as far away.")]
+        [Range(0f, 1f)]
+        [SerializeField] float fog = 0.35f;
+
+        const string Characters = "0123456789:.-, ";
 
         BoatMotion _motion;
         BoatFrame _frame;
-        RowingRig _rig;
         SceneryLayers _scenery;
-        Transform _card;
-        TextMesh[] _labels;
-        TextMesh[] _values;
-        TextMesh _footer;
+        Transform _board;
         Material _textMaterial;
-        float _eyeHeight = float.NaN;
+        readonly Dictionary<char, Mesh> _glyphs = new Dictionary<char, Mesh>();
+        readonly SkyReadout _readout = new SkyReadout();
+        BlockLine _headline, _left, _right;
+        TextMesh _headlineLabel, _leftLabel, _rightLabel, _footer;
 
         void Awake()
         {
             _motion = GetComponent<BoatMotion>();
             _frame = GetComponent<BoatFrame>();
-            _rig = GetComponent<RowingRig>();
             _scenery = FindFirstObjectByType<SceneryLayers>();
             if (font == null || textShader == null)
             {
@@ -58,19 +70,18 @@ namespace RowVR.Rowing
                 return;
             }
 
-            font.RequestCharactersInTexture("0123456789:.,-/ abcdefghijklmnopqrstuvwxyzAPMS", 96);
-            _textMaterial = new Material(textShader) { name = "Panel Lettering", mainTexture = font.material.mainTexture };
+            font.RequestCharactersInTexture("0123456789:.,-/ abcdefghijklmnopqrstuvwxyzAPMS·", 96);
+            _textMaterial = new Material(textShader) { name = "Sky Lettering", mainTexture = font.material.mainTexture };
             Font.textureRebuilt += OnFontRebuilt;
             Build();
-            // Stays readable over the room when passthrough fades in (#45).
-            PassthroughFade.KeepVisible(_card);
-            _card.gameObject.SetActive(false);
+            _board.gameObject.SetActive(false);
         }
 
         void OnDestroy()
         {
             Font.textureRebuilt -= OnFontRebuilt;
-            if (_card != null) Destroy(_card.gameObject);
+            if (_board != null) Destroy(_board.gameObject);
+            foreach (var mesh in _glyphs.Values) Destroy(mesh);
         }
 
         // A dynamic font re-packs its atlas when it needs new glyphs; point at the new one.
@@ -81,87 +92,26 @@ namespace RowVR.Rowing
 
         void LateUpdate()
         {
-            if (!_frame.HasFrame) return;
+            var head = _scenery != null ? _scenery.Head : null;
+            if (!_frame.HasFrame || head == null) return;
 
-            if (_rig.IsTracking)
-            {
-                var eye = _rig.LastSample.HeadPosition.Y;
-                _eyeHeight = float.IsNaN(_eyeHeight) ? eye : Mathf.Lerp(_eyeHeight, eye, 1f - Mathf.Exp(-Time.deltaTime / 4f));
-            }
-            if (float.IsNaN(_eyeHeight)) return;
+            // Out along the boat's heading and up; turned to face the eyes, never rolled.
+            var forward = _frame.Forward;
+            var direction = Quaternion.AngleAxis(-elevation, Vector3.Cross(Vector3.up, forward)) * forward;
+            _board.SetPositionAndRotation(head.position + direction * distance, Quaternion.LookRotation(direction, Vector3.up));
+            if (!_board.gameObject.activeSelf) _board.gameObject.SetActive(true);
 
-            // Fixed in the boat; turned once toward where the rower's eyes usually are.
-            var position = _frame.Point(towardStern, toRight, 0f);
-            position.y = _eyeHeight - belowEyes;
-            var eyes = _frame.Point(-0.3f, 0f, 0f);
-            eyes.y = _eyeHeight;
-            var facing = position - eyes;
-            facing.y *= 0.5f;
-            _card.SetPositionAndRotation(position, Quaternion.LookRotation(facing.normalized, Vector3.up));
-            if (!_card.gameObject.activeSelf) _card.gameObject.SetActive(true);
-
-            Show(_motion.Session);
+            _readout.Update(_motion.Session, _motion.Workout, RowerSettings.Workout.Name);
+            Show(_headline, _headlineLabel, _readout.Headline);
+            Show(_left, _leftLabel, _readout.Left);
+            Show(_right, _rightLabel, _readout.Right);
+            if (_footer.text != _readout.Footer) _footer.text = _readout.Footer;
         }
 
-        void Show(SessionStats session)
+        static void Show(BlockLine line, TextMesh label, ReadoutLine value)
         {
-            if (!session.Active && session.LastSummary.HasValue)
-            {
-                var s = session.LastSummary.Value;
-                Set(0, "session", MetricsFormat.Time(s.ElapsedSeconds));
-                Set(1, "avg /500m", MetricsFormat.Split(s.AverageSplitSeconds));
-                Set(2, "metres", MetricsFormat.Distance(s.DistanceMetres));
-                _footer.text = $"{s.Strokes} strokes  ·  avg rate {MetricsFormat.Rate(s.AverageRate)}";
-                return;
-            }
-
-            var workout = _motion.Workout;
-            var time = MetricsFormat.Time(session.ElapsedSeconds);
-            var distance = MetricsFormat.Distance(session.DistanceMetres);
-            Set(0, "time", time);
-            Set(1, "/500m", MetricsFormat.Split(session.StrokeSplitSeconds));
-            Set(2, "metres", distance);
-
-            // The chosen workout (#31) takes over the lines it counts down.
-            if (session.Active && workout != null && workout.Workout.Kind != WorkoutKind.JustRow)
-            {
-                if (workout.Finished)
-                {
-                    _footer.text = "workout complete" + IntervalSummary(workout);
-                    return;
-                }
-                switch (workout.Workout.Kind)
-                {
-                    case WorkoutKind.Timed:
-                        Set(0, "time left", MetricsFormat.Time(workout.SecondsLeft));
-                        break;
-                    case WorkoutKind.Distance:
-                        Set(2, "metres left", MetricsFormat.Distance(workout.MetresLeft));
-                        break;
-                    case WorkoutKind.Intervals:
-                        Set(0, $"{(workout.Resting ? "rest" : "work")} {workout.Interval} of {workout.Workout.Repeats}",
-                            MetricsFormat.Time(workout.SecondsLeft));
-                        break;
-                }
-            }
-
-            _footer.text = session.Active
-                ? $"rate {MetricsFormat.Rate(session.Rate)}  ·  {session.Strokes} strokes  ·  avg {MetricsFormat.Split(session.AverageSplitSeconds)}"
-                : $"{RowerSettings.Workout.Name}  ·  take a stroke to begin";
-        }
-
-        static string IntervalSummary(WorkoutProgress workout)
-        {
-            if (workout.IntervalMetres.Count == 0) return "";
-            var parts = "";
-            foreach (var m in workout.IntervalMetres) parts += (parts.Length > 0 ? " " : "") + MetricsFormat.Distance(m);
-            return "  ·  " + parts + " m";
-        }
-
-        void Set(int row, string label, string value)
-        {
-            if (_labels[row].text != label) _labels[row].text = label;
-            if (_values[row].text != value) _values[row].text = value;
+            line.SetText(value.Value);
+            if (label.text != value.Label) label.text = value.Label;
         }
 
         void Build()
@@ -169,52 +119,152 @@ namespace RowVR.Rowing
             var palette = _scenery != null ? _scenery.Palette : null;
             var paper = palette != null ? palette.paper : new Color(0.97f, 0.94f, 0.86f);
             var ink = palette != null ? palette.ink : new Color(0.17f, 0.14f, 0.16f);
-            var soft = Color.Lerp(ink, paper, 0.45f);
 
-            _card = new GameObject("Metrics Panel").transform;
-            if (_scenery != null) _card.SetParent(_scenery.Near, false);
+            _board = new GameObject("Sky Numbers").transform;
+            if (_scenery != null) _board.SetParent(_scenery.Near, false);
 
-            // The card: a sheet of paper with an inked edge, a touch off-square as if pinned
-            // up by hand. Its front faces the rower (-Z of the card faces them).
-            var sheet = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            sheet.name = "Card";
-            Destroy(sheet.GetComponent<Collider>());
-            sheet.transform.SetParent(_card, false);
-            sheet.transform.localScale = new Vector3(CardWidth, CardHeight, 0.006f);
-            sheet.transform.localRotation = Quaternion.Euler(0f, 0f, -1.5f);
-            if (_scenery != null && _scenery.IllustratedShader != null)
-                IllustratedMaterials.Apply(_scenery, sheet, paper, true, 0.0025f);
-            else
-                sheet.GetComponent<Renderer>().material.color = paper;
+            var blocks = IllustratedMaterials.Create(_scenery, "Sky Number Blocks", paper, true, headlineBlock * 0.07f)
+                         ?? new Material(Shader.Find("Universal Render Pipeline/Unlit")) { color = paper };
+            if (blocks.HasProperty("_FogAmount")) blocks.SetFloat("_FogAmount", fog);
+            // Blank glyphs (space, the thousands gap) get no mesh; their slots stay off.
+            foreach (var c in Characters)
+                if (HasBlocks(c)) _glyphs[c] = BuildGlyph(c);
 
-            _labels = new TextMesh[3];
-            _values = new TextMesh[3];
-            for (var row = 0; row < 3; row++)
-            {
-                var y = CardHeight * 0.5f - 0.05f - row * 0.068f;
-                _labels[row] = Text("Label", new Vector3(-CardWidth * 0.5f + 0.022f, y - 0.012f, -0.005f), 0.0024f, TextAnchor.LowerLeft, soft);
-                _values[row] = Text("Value", new Vector3(CardWidth * 0.5f - 0.02f, y - 0.018f, -0.005f), 0.0062f, TextAnchor.LowerRight, ink);
-            }
-            _footer = Text("Footer", new Vector3(0f, -CardHeight * 0.5f + 0.022f, -0.005f), 0.0024f, TextAnchor.LowerCenter, soft);
+            // Board space, metres: +x to the rower's right, +y up, the headline's middle at 0.
+            // The side numbers are half the headline's size, under its outer edges.
+            var side = headlineBlock * 0.5f;
+            var sideRow = -BlockFont.Rows * headlineBlock * 0.5f - headlineBlock * 2.2f - BlockFont.Rows * side * 0.5f;
+            var sideOffset = headlineBlock * 9f;
+            _headline = new BlockLine(_board, "Headline", Vector3.zero, headlineBlock, _glyphs, blocks);
+            _left = new BlockLine(_board, "Left", new Vector3(-sideOffset, sideRow, 0f), side, _glyphs, blocks);
+            _right = new BlockLine(_board, "Right", new Vector3(sideOffset, sideRow, 0f), side, _glyphs, blocks);
+
+            var labelGap = headlineBlock * 0.45f;
+            _headlineLabel = Text("Headline Label", new Vector3(0f, -BlockFont.Rows * headlineBlock * 0.5f - labelGap, 0f), headlineBlock * 0.11f, ink);
+            _leftLabel = Text("Left Label", new Vector3(-sideOffset, sideRow - BlockFont.Rows * side * 0.5f - labelGap, 0f), headlineBlock * 0.08f, ink);
+            _rightLabel = Text("Right Label", new Vector3(sideOffset, sideRow - BlockFont.Rows * side * 0.5f - labelGap, 0f), headlineBlock * 0.08f, ink);
+            _footer = Text("Footer", new Vector3(0f, sideRow - BlockFont.Rows * side * 0.5f - labelGap * 4.5f, 0f), headlineBlock * 0.08f, ink);
         }
 
-        TextMesh Text(string name, Vector3 position, float size, TextAnchor anchor, Color colour)
+        /// <summary>
+        /// One glyph at one block per metre, its bottom-left at the origin: a box per filled
+        /// cell, a little smaller than the cell and a little off-true, like stacked paper blocks.
+        /// </summary>
+        static Mesh BuildGlyph(char c)
+        {
+            var shape = new ShapeBuilder();
+            var random = new System.Random(c * 7919);
+            for (var row = 0; row < BlockFont.Rows; row++)
+            for (var column = 0; column < BlockFont.Width(c); column++)
+            {
+                if (!BlockFont.Filled(c, column, row)) continue;
+                var centre = new Vector3(column + 0.5f, BlockFont.Rows - row - 0.5f, 0f)
+                             + new Vector3(Jitter(random, 0.04f), Jitter(random, 0.04f), Jitter(random, 0.08f));
+                var size = new Vector3(0.88f + Jitter(random, 0.04f), 0.88f + Jitter(random, 0.04f), 0.6f);
+                Box(shape, centre, size, Quaternion.Euler(0f, 0f, Jitter(random, 3f)), Color.white);
+            }
+            return shape.Build("Sky Glyph " + c);
+        }
+
+        static bool HasBlocks(char c)
+        {
+            for (var row = 0; row < BlockFont.Rows; row++)
+                for (var column = 0; column < BlockFont.Width(c); column++)
+                    if (BlockFont.Filled(c, column, row)) return true;
+            return false;
+        }
+
+        static float Jitter(System.Random random, float amount) => ((float)random.NextDouble() * 2f - 1f) * amount;
+
+        static void Box(ShapeBuilder shape, Vector3 centre, Vector3 size, Quaternion rotation, Color colour)
+        {
+            var h = size * 0.5f;
+            Vector3 P(float x, float y, float z) => centre + rotation * new Vector3(x * h.x, y * h.y, z * h.z);
+            // Wound to face outward; the front (-z) is what the rower sees.
+            shape.Quad(P(-1, -1, -1), P(-1, 1, -1), P(1, 1, -1), P(1, -1, -1), colour);
+            shape.Quad(P(1, -1, 1), P(1, 1, 1), P(-1, 1, 1), P(-1, -1, 1), colour);
+            shape.Quad(P(-1, 1, -1), P(-1, 1, 1), P(1, 1, 1), P(1, 1, -1), colour);
+            shape.Quad(P(-1, -1, 1), P(-1, -1, -1), P(1, -1, -1), P(1, -1, 1), colour);
+            shape.Quad(P(-1, -1, 1), P(-1, 1, 1), P(-1, 1, -1), P(-1, -1, -1), colour);
+            shape.Quad(P(1, -1, -1), P(1, 1, -1), P(1, 1, 1), P(1, -1, 1), colour);
+        }
+
+        TextMesh Text(string name, Vector3 position, float size, Color colour)
         {
             var go = new GameObject(name);
-            go.transform.SetParent(_card, false);
+            go.transform.SetParent(_board, false);
             go.transform.localPosition = position;
-            // TextMesh faces -Z; turn it to read from the rower's side of the card.
-            go.transform.localRotation = Quaternion.identity;
             var text = go.AddComponent<TextMesh>();
             text.font = font;
             text.fontSize = 96;
             text.characterSize = size;
-            text.anchor = anchor;
-            text.alignment = anchor == TextAnchor.LowerRight ? TextAlignment.Right
-                           : anchor == TextAnchor.LowerCenter ? TextAlignment.Center : TextAlignment.Left;
+            text.anchor = TextAnchor.UpperCenter;
+            text.alignment = TextAlignment.Center;
             text.color = colour;
             go.GetComponent<MeshRenderer>().sharedMaterial = _textMaterial;
             return text;
+        }
+
+        /// <summary>A line of block characters, centred on its origin, its middle at the origin's height.</summary>
+        sealed class BlockLine
+        {
+            readonly Transform _root;
+            readonly float _block;
+            readonly IReadOnlyDictionary<char, Mesh> _glyphs;
+            readonly Material _material;
+            readonly List<MeshFilter> _slots = new List<MeshFilter>();
+            string _text;
+
+            public BlockLine(Transform parent, string name, Vector3 position, float block,
+                             IReadOnlyDictionary<char, Mesh> glyphs, Material material)
+            {
+                _root = new GameObject(name).transform;
+                _root.SetParent(parent, false);
+                _root.localPosition = position;
+                _block = block;
+                _glyphs = glyphs;
+                _material = material;
+            }
+
+            public void SetText(string text)
+            {
+                if (text == _text) return;
+                _text = text;
+
+                var x = -BlockFont.Measure(text) * 0.5f;
+                for (var i = 0; i < text.Length; i++)
+                {
+                    var c = text[i];
+                    var slot = Slot(i);
+                    var drawn = _glyphs.TryGetValue(c, out var mesh);
+                    slot.gameObject.SetActive(drawn);
+                    if (drawn)
+                    {
+                        slot.sharedMesh = mesh;
+                        slot.transform.localPosition = new Vector3(x, -BlockFont.Rows * 0.5f, 0f) * _block;
+                    }
+                    x += BlockFont.Width(c) + BlockFont.Gap;
+                }
+                for (var i = text.Length; i < _slots.Count; i++) _slots[i].gameObject.SetActive(false);
+            }
+
+            MeshFilter Slot(int index)
+            {
+                while (_slots.Count <= index)
+                {
+                    var go = new GameObject("Slot " + _slots.Count);
+                    go.transform.SetParent(_root, false);
+                    go.transform.localScale = Vector3.one * _block;
+                    // Each slot leans its own way, by a hair, so repeated digits are not stamped.
+                    go.transform.localRotation = Quaternion.Euler(0f, 0f, ((_slots.Count * 37) % 7 - 3) * 0.6f);
+                    var renderer = go.AddComponent<MeshRenderer>();
+                    renderer.sharedMaterial = _material;
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                    _slots.Add(go.AddComponent<MeshFilter>());
+                }
+                return _slots[index];
+            }
         }
     }
 }
