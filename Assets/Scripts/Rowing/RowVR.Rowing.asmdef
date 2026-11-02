@@ -8,7 +8,8 @@
     "Unity.InputSystem",
     "Unity.XR.ARFoundation",
     "Unity.XR.CompositionLayers",
-    "Unity.XR.ARSubsystems"
+    "Unity.XR.ARSubsystems",
+    "Unity.XR.OpenXR"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

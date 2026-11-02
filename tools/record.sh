@@ -5,7 +5,7 @@
 # recorder watches for a trigger file in its data directory: this script writes it to
 # start a take and deletes it to stop. The file's contents become the clip's note, so
 # every take is labelled at the moment it is recorded - including the headset firmware,
-# which ADR-0005 wants alongside every real-hardware fixture.
+# which #36 wants alongside every real-hardware fixture.
 #
 #   make record NAME=steady-22spm     # start; row
 #   make record-stop                  # stop; the clip is written on the headset

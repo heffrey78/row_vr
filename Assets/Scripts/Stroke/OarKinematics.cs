@@ -74,14 +74,14 @@ namespace RowVR.Stroke
     /// The blade also follows the handle's direction, not only the phase. When a catch is
     /// called prematurely, with the hands low and hidden at the catch, the detector stays in
     /// <see cref="StrokePhase.Drive"/> while the hands carry on toward the catch until the
-    /// real drive (the erg-sloppy fixture does this at ~187-190 s, TASK-0021). Its stroke
+    /// real drive (the erg-sloppy fixture does this at ~187-190 s, #67). Its stroke
     /// count is unaffected, but a blade that believed it would sit buried while the handle
     /// still travels toward the catch. So during a drive the blade lifts when the
     /// handle moves clearly toward the catch, and goes back in when it moves clearly toward
     /// the finish. A blade in the water moving toward the catch is never right.
     ///
     /// <see cref="StrokePhase.Unknown"/> means no stroke is being tracked: before the first
-    /// stroke, after a stop, and after a withdrawn catch (ADR-0007), which the detector
+    /// stroke, after a stop, and after a withdrawn catch (#38), which the detector
     /// reports as Unknown. In all three the blade lifts and the sweep eases back to square,
     /// rather than freezing mid-stroke.
     ///

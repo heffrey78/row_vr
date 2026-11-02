@@ -14,13 +14,17 @@ hand tracking counts strokes, two oars sweep in the rower's hands, sounds mark t
 finish, and (seen by the rower on 2026-09-30) the illustrated lake, the scull and the
 hand-lettered card with time, pace and distance. Speed comes from a boat model calibrated on
 real recordings. The ambient soundscape is built but not yet judged in the headset. **Built but not yet tried
-in the headset:** a forward-facing rapids scene (REQ-0007) and a hands-only menu for workouts,
-resistance and scene (REQ-0008), both checked in headless renders and an Android build.
+in the headset:** a forward-facing rapids scene (#30) and a hands-only menu for workouts,
+resistance and scene (#31), both checked in headless renders and an Android build.
 
 ## Rowing with it
 
 Put the headset on, sit at the machine, take the handle, and row. The first stroke starts the
 session; the card to your right shows time, pace per 500 m, distance, rate and strokes.
+
+**Out of place?** Sit as you row, look toward the stern, and recenter the headset (hold the
+Meta button, or the palm pinch): the boat comes back round you at the right height. The menu's
+**re-seat** does the same without the headset's help. Resting never moves the boat.
 
 **The menu.** Let go of the handle and rest for a few seconds: a card appears low in front of
 you. Poke its buttons with a fingertip to choose:

@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using RowVR.Stroke;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace RowVR.Rowing
 {
@@ -7,12 +9,11 @@ namespace RowVR.Rowing
     /// Where the boat is, relative to the rower. The one frame the hull, the oars and the
     /// metrics panel all sit in, so they always agree.
     ///
-    /// There is no machine to see, so the frame is inferred. Its centre follows a slow average
-    /// of the hands, so within a stroke it holds still while the rower slides past, and over a
-    /// session it settles to where they sit. Its heading is the machine's axis, learned from
-    /// the hands' travel (MachineAxis, engine-free and tested): the handle can only move along
-    /// the machine, whichever way the rower looks. It used to follow the head's facing, and
-    /// looking to the side turned the boat.
+    /// There is no machine to see, so the frame is inferred, by Seat (engine-free and tested,
+    /// #96). While rowing, its centre follows a slow average of the hands, so within a stroke it
+    /// holds still while the rower slides past, and its heading is the machine's axis, learned
+    /// from the hands' travel. While resting it holds still. A headset recenter, or the wrist
+    /// menu's re-seat, puts it back round the rower at once.
     ///
     /// Runs its LateUpdate before the views (execution order -50), after RowingRig's Update has
     /// taken the frame's pose. Keeps WaterHeight on SceneryLayers matched to the oarlocks.
@@ -33,21 +34,29 @@ namespace RowVR.Rowing
                  "centres a 0.88 m inboard on the stroke.")]
         [SerializeField] float oarlockSetBack = 0.1f;
 
-        [Tooltip("Time constant, seconds, for the frame's centre to follow the rower. Long enough " +
-                 "that the oarlocks do not move with the seat during a stroke.")]
+        [Tooltip("Time constant, seconds of rowing, for the frame's centre to follow the rower. Long " +
+                 "enough that the oarlocks do not move with the seat during a stroke.")]
         [SerializeField] float followSeconds = 4f;
 
         RowingRig _rig;
         SceneryLayers _scenery;
-        readonly MachineAxis _axis = new MachineAxis();
+        readonly Seat _seat = new Seat();
+        static readonly List<XRInputSubsystem> InputSubsystems = new List<XRInputSubsystem>();
+        XRInputSubsystem _input;
 
-        public bool HasFrame { get; private set; }
+        public bool HasFrame => _seat.HasSeat;
 
         /// <summary>Average hand position: the middle of the stroke, at oarlock height.</summary>
-        public Vector3 Centre { get; private set; }
+        public Vector3 Centre => _seat.Centre.ToVector3();
 
         /// <summary>The rower's levelled facing, toward the stern.</summary>
-        public Vector3 Forward { get; private set; } = Vector3.forward;
+        public Vector3 Forward => _seat.Forward.ToVector3();
+
+        /// <summary>Counts seatings. Anything placed once around the boat places itself again when it changes.</summary>
+        public int SeatVersion => _seat.Version;
+
+        /// <summary>Puts the boat back round the rower, keeping the heading (the wrist menu's re-seat).</summary>
+        public void Reseat() => _seat.Reseat(Time.timeAsDouble);
 
         public Vector3 Right => Vector3.Cross(Vector3.up, Forward);
         public float OarlockHeight => Centre.y;
@@ -69,35 +78,50 @@ namespace RowVR.Rowing
         {
             _rig = GetComponent<RowingRig>();
             _scenery = FindFirstObjectByType<SceneryLayers>();
+            _seat.FollowSeconds = followSeconds;
         }
+
+        void OnDisable() => Listen(null);
 
         void LateUpdate()
         {
+            ListenForRecenter();
             if (!_rig.IsTracking) return;
-            Follow(_rig.LastSample);
+
+            // The frame's clock, not the sample's: a replayed clip carries its own timestamps,
+            // and recenters and re-seats are timed by the frame.
+            var sample = _rig.LastSample;
+            var rowing = _rig.State.Phase != StrokePhase.Unknown;
+            _seat.Update(Time.timeAsDouble, sample.HeadPosition, sample.HeadForward,
+                         (sample.LeftHand + sample.RightHand) * 0.5f, rowing);
             if (_scenery != null) _scenery.WaterHeight = WaterHeight;
         }
 
-        void Follow(HandSample sample)
+        // The headset's recenter moves the tracking space; OpenXR reports it as
+        // trackingOriginUpdated once Recentering has turned it on. The subsystem can start after
+        // this component, so keep looking until one is running.
+        void ListenForRecenter()
         {
-            var midpoint = (sample.LeftHand + sample.RightHand) * 0.5f;
-            var hands = midpoint.ToVector3();
+            if (_input != null && _input.running) return;
+            SubsystemManager.GetSubsystems(InputSubsystems);
+            XRInputSubsystem running = null;
+            foreach (var s in InputSubsystems)
+                if (s.running) { running = s; break; }
+            Listen(running);
+        }
 
-            if (!HasFrame)
-            {
-                // The head is only the first guess; the hands take over as soon as they row.
-                _axis.Seed(sample.HeadForward);
-                Centre = hands;
-                Forward = _axis.Forward.ToVector3();
-                HasFrame = true;
-                return;
-            }
+        void Listen(XRInputSubsystem input)
+        {
+            if (input == _input) return;
+            if (_input != null) _input.trackingOriginUpdated -= OnTrackingOriginUpdated;
+            _input = input;
+            if (_input != null) _input.trackingOriginUpdated += OnTrackingOriginUpdated;
+        }
 
-            _axis.Update(sample.TimeSeconds, midpoint);
-            Forward = _axis.Forward.ToVector3();
-
-            var alpha = 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.01f, followSeconds));
-            Centre = Vector3.Lerp(Centre, hands, alpha);
+        void OnTrackingOriginUpdated(XRInputSubsystem input)
+        {
+            Debug.Log("[RowVR] Tracking space moved (recenter): re-seating.");
+            _seat.SpaceMoved(Time.timeAsDouble);
         }
     }
 }

@@ -1,4 +1,4 @@
-# Rapids: design sketch (REQ-0007, roadmap)
+# Rapids: design sketch (#30, roadmap)
 
 A second scene, gamified: a river run seen **facing forward**, powered by the rower's strokes,
 through **rapid sections** with **calm pools** between them. It's an interval workout disguised
@@ -37,11 +37,11 @@ Everything that is engine-free already fits:
 
 ## Comfort first (needs its own ADR before building)
 
-ADR-0010 excluded lateral motion and bobbing for the lake. Rapids invite both, and forward
+#41 excluded lateral motion and bobbing for the lake. Rapids invite both, and forward
 motion through narrow banks is strong vection. The starting position:
 
 1. **No roll, no pitch, ever.** The horizon stays level, as on the lake.
-2. **Forward speed is smoothed,** as in ADR-0010. Rapids add speed smoothly over seconds, not
+2. **Forward speed is smoothed,** as in #41. Rapids add speed smoothly over seconds, not
    in surges.
 3. **Drifting off the line is slow and lateral only,** at most about 0.5 m/s sideways,
    eased in and out, and it is the world that slides, not the view rotating.

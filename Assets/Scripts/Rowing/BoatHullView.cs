@@ -4,15 +4,15 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The boat the rower sits in (TASK-0030): a single-scull shell, riggers out to the
+    /// The boat the rower sits in (#76): a single-scull shell, riggers out to the
     /// oarlocks, slide rails with a seat that slides with the rower, and a footplate. It sits
     /// on the water at <see cref="BoatFrame"/>, which the oars share, so the riggers always
     /// meet the oars' gates.
     ///
-    /// The rower faces the stern (ADR-0010): most of the shell runs behind them, and the
-    /// stern is in front, past their feet. The shell never pitches or rolls (ADR-0010).
+    /// The rower faces the stern (#41): most of the shell runs behind them, and the
+    /// stern is in front, past their feet. The shell never pitches or rolls (#41).
     ///
-    /// Built in code, illustrated (ADR-0011) when the scene provides the shader.
+    /// Built in code, illustrated (#42) when the scene provides the shader.
     /// </summary>
     [RequireComponent(typeof(RowingRig), typeof(BoatFrame))]
     public sealed class BoatHullView : MonoBehaviour

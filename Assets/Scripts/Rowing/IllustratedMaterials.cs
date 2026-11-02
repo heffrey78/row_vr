@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// Builds materials on RowVR/Illustrated (ADR-0011) and the paper grain they share, and
+    /// Builds materials on RowVR/Illustrated (#42) and the paper grain they share, and
     /// bakes the smoothed normals its ink pass inflates along.
     ///
     /// The shader itself comes from SceneryLayers, which holds it as a scene reference so a

@@ -6,7 +6,7 @@ using RowVR.Stroke;
 namespace RowVR.Stroke.Tests
 {
     /// <summary>
-    /// Boat speed from the stroke (REQ-0003-FUNC, ADR-0010), run on the rowing-machine
+    /// Boat speed from the stroke (#26, #41), run on the rowing-machine
     /// recordings through the default detector, as in the headset.
     /// </summary>
     [TestFixture]
@@ -136,7 +136,7 @@ namespace RowVR.Stroke.Tests
         [Test]
         public void The_visible_speed_has_no_per_stroke_lurch()
         {
-            // ADR-0010: within one steady stroke cycle the speed the world moves at varies by
+            // #41: within one steady stroke cycle the speed the world moves at varies by
             // under 5%. The true speed surges far more than that.
             var run = Row(Steady);
             for (var i = 6; i < 11; i++)

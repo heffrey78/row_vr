@@ -6,7 +6,7 @@ using RowVR.Stroke;
 namespace RowVR.Stroke.Tests
 {
     /// <summary>
-    /// The oars (REQ-0002-FUNC) run on the detector's output, so these replay the
+    /// The oars (#25) run on the detector's output, so these replay the
     /// rowing-machine recordings through the default detector and check the oar pose frame
     /// by frame. Anything the oars do wrong here, the rower would see in the headset.
     /// </summary>
@@ -129,7 +129,7 @@ namespace RowVR.Stroke.Tests
         {
             // erg-sloppy: a catch is called at 187.14 s with the hands low at the catch, tracking
             // drops until 188.03 s, and the hands come back still heading for the catch. The
-            // detector stays in Drive until the real drive at ~190 s (TASK-0021); the blade must
+            // detector stays in Drive until the real drive at ~190 s (#67); the blade must
             // stay out until then.
             var frames = Replay("real-erg-sloppy-12strokes-20260927.rowclip", new OarSettings());
             var sawFalseDrive = false;

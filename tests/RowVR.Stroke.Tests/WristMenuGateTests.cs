@@ -3,7 +3,7 @@ using RowVR.Stroke;
 
 namespace RowVR.Stroke.Tests
 {
-    /// <summary>The wrist menu's gesture (ADR-0015).</summary>
+    /// <summary>The wrist menu's gesture (#46).</summary>
     [TestFixture]
     public class WristMenuGateTests
     {

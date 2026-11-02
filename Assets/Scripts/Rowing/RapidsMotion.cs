@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// Runs the rapids (REQ-0007): feeds RapidsRun from the boat model every frame, and moves
+    /// Runs the rapids (#30): feeds RapidsRun from the boat model every frame, and moves
     /// the scenery by the raft's ground speed (its own speed plus the current) and sideways by
     /// its drift off the line. The rules and comfort limits live in RapidsRun (engine-free,
     /// tested); this only connects it.
