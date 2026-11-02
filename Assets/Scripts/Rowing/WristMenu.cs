@@ -84,6 +84,9 @@ namespace RowVR.Rowing
             _textMaterial = new Material(textShader) { name = "Wrist Menu Lettering", mainTexture = font.material.mainTexture };
             Font.textureRebuilt += OnFontRebuilt;
 
+            // The menu needs hands; holding the controllers takes them away (#103).
+            if (GetComponent<ControllerNote>() == null) gameObject.AddComponent<ControllerNote>().Init(font, textShader);
+
             _tick = new GameObject("Wrist Menu Tick").AddComponent<AudioSource>();
             _tick.playOnAwake = false;
             _tick.spatialBlend = 0.6f;

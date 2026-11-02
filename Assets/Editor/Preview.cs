@@ -22,7 +22,7 @@ namespace RowVR.Editor
     ///   Unity -batchmode -projectPath . -executeMethod RowVR.Editor.Preview.CaptureBatch
     ///         [-previewSeconds 16] [-previewOut .devloop/preview]
     ///         [-previewFrames 0] [-previewFps 15] [-previewScene Assets/Scenes/Row.unity]
-    ///         [-previewView ahead|level|menu] [-previewWristMenu]
+    ///         [-previewView ahead|level|menu] [-previewWristMenu] [-previewControllerNote]
     ///
     /// With -previewFrames N it also writes a sequence, frame_000.png onward, from the rower's
     /// eye: N frames at -previewFps of game time each, whatever the machine renders at
@@ -54,6 +54,7 @@ namespace RowVR.Editor
             _fps = Math.Max(1, (int)FloatArg("-previewFps", 15f));
             // No hands headless: pin the wrist menu in front of the head to render its layout.
             WristMenu.PreviewInFrontOfHead = Array.IndexOf(Environment.GetCommandLineArgs(), "-previewWristMenu") >= 0;
+            ControllerNote.PreviewShown = Array.IndexOf(Environment.GetCommandLineArgs(), "-previewControllerNote") >= 0;
             Directory.CreateDirectory(_outDir);
 
             EditorSceneManager.OpenScene(StringArg("-previewScene", ScenePath));
