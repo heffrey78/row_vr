@@ -5,7 +5,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The course (ADR-0008, illustrated per ADR-0011): banks either side with rounded trees
+    /// The course (#39, illustrated per #42): banks either side with rounded trees
     /// and conifers, reeds at the water's edge and their dark reflections on the water; three
     /// ridgelines of hills behind, paler with distance; and lines of lane buoys near the boat.
     /// All of it passes the rower as the boat travels and wraps round beyond the fog, so a

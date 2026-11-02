@@ -20,7 +20,7 @@ namespace RowVR.Stroke
 
         /// <summary>
         /// The machine's resistance dial, 1-10. The rower sets it to match their machine,
-        /// since a low-end machine cannot report it (REQ-0003-FUNC). 5 is the calibration point.
+        /// since a low-end machine cannot report it (#26). 5 is the calibration point.
         /// </summary>
         public int ResistanceLevel = 5;
 
@@ -33,7 +33,7 @@ namespace RowVR.Stroke
 
         /// <summary>
         /// Time constant, seconds, of each of the two smoothing stages behind the speed the
-        /// world visibly moves at (ADR-0010). Two stages of 1.1 s lag about as much as one of
+        /// world visibly moves at (#41). Two stages of 1.1 s lag about as much as one of
         /// 2 s, but cut the ~0.35 Hz per-stroke surge to under 5% where one stage of 1.5 s
         /// left 6%, measured on the steady fixture.
         /// </summary>
@@ -41,15 +41,15 @@ namespace RowVR.Stroke
     }
 
     /// <summary>
-    /// Boat speed from the stroke (REQ-0003-FUNC). There is no power measurement on this
-    /// machine, so effort is inferred from handle speed during the drive (ADR-0010 context),
+    /// Boat speed from the stroke (#26). There is no power measurement on this
+    /// machine, so effort is inferred from handle speed during the drive (#41 context),
     /// and drag follows the same cube law rowing monitors use, so pace reads like a real
     /// monitor's.
     ///
     /// Two speeds come out. <see cref="Speed"/> is the true model speed, surge included; pace
     /// and distance come from it. <see cref="VisibleSpeed"/> is that speed smoothed over about
     /// a stroke, and is what the world should move at, so a harder stroke is seen over the
-    /// next few strokes and the boat never lurches (ADR-0010).
+    /// next few strokes and the boat never lurches (#41).
     ///
     /// Only drives add speed. With no strokes, or no tracking, the boat glides to rest under
     /// drag and is never pushed by anything else.

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// Every colour in the scene, in one place (ADR-0011), so the whole look can be re-keyed:
+    /// Every colour in the scene, in one place (#42), so the whole look can be re-keyed:
     /// a morning lake now, dusk or the rapids later. Colours are authored here as seen, in
     /// sRGB; materials convert them for the Linear-space project.
     ///

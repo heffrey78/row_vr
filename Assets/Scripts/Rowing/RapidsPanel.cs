@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The rapids card (REQ-0007): which rapid, how much of it spent on the line, the run's
+    /// The rapids card (#30): which rapid, how much of it spent on the line, the run's
     /// time, and power against the target, the one thing the rower can do about the line.
     /// Between rapids it shows the last rapid's result; at the end, the run's summary.
     ///
@@ -53,7 +53,7 @@ namespace RowVR.Rowing
             _textMaterial = new Material(textShader) { name = "Rapids Lettering", mainTexture = font.material.mainTexture };
             Font.textureRebuilt += OnFontRebuilt;
             Build();
-            // Stays readable over the room when passthrough fades in (ADR-0014).
+            // Stays readable over the room when passthrough fades in (#45).
             PassthroughFade.KeepVisible(_card);
             _card.gameObject.SetActive(false);
         }

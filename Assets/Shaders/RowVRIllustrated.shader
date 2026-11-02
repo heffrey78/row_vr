@@ -1,7 +1,7 @@
-// The illustrated look (ADR-0011): stepped painterly shading from a fixed light, a paper
+// The illustrated look (#42): stepped painterly shading from a fixed light, a paper
 // grain fixed in world space, and an ink outline. No post-processing, no depth texture, no
 // real-time lighting: all of it is per-material, which keeps it cheap on Quest and leaves
-// alpha alone for passthrough (ADR-0008, ADR-0009).
+// alpha alone for passthrough (#39, #40).
 //
 // Two passes. "Illustrated" is the colour. "Ink" is the outline: the mesh inflated along
 // smoothed normals (baked into TEXCOORD3 by IllustratedMesh, so hard-edged shapes do not

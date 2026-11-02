@@ -7,7 +7,7 @@ using RowVR.Stroke;
 namespace RowVR.Stroke.Tests
 {
     /// <summary>
-    /// Rowing-machine recordings - the app's primary use (REQ-0001-FUNC). Three takes from
+    /// Rowing-machine recordings - the app's primary use (#24). Three takes from
     /// 2026-09-27 on a Quest 3 (firmware UP1A.231005.007.A1), hands gripping the handle, each
     /// starting and ending off the handle. Counts are the rower's own.
     ///

@@ -5,7 +5,7 @@ namespace RowVR.Stroke
     /// <summary>
     /// Where a piece of scenery sits on an endless course, relative to the rower.
     ///
-    /// The rower never moves (ADR-0008); the course moves past. Each piece has a fixed place
+    /// The rower never moves (#39); the course moves past. Each piece has a fixed place
     /// on the course, and as the boat travels it slides past the rower. Once it is further
     /// ahead than the window allows it wraps round to behind, so a small set of pieces makes
     /// an endless course. Both ends of the window sit beyond the fog, so the wrap is never
