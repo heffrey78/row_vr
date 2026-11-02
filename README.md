@@ -22,6 +22,10 @@ resistance and scene (#31), both checked in headless renders and an Android buil
 Put the headset on, sit at the machine, take the handle, and row. The first stroke starts the
 session; the card to your right shows time, pace per 500 m, distance, rate and strokes.
 
+**Out of place?** Sit as you row, look toward the stern, and recenter the headset (hold the
+Meta button, or the palm pinch): the boat comes back round you at the right height. The menu's
+**re-seat** does the same without the headset's help. Resting never moves the boat.
+
 **The menu.** Let go of the handle and rest for a few seconds: a card appears low in front of
 you. Poke its buttons with a fingertip to choose:
 

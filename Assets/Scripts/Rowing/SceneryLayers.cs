@@ -171,6 +171,7 @@ namespace RowVR.Rowing
         }
 
         BoatFrame _frame;
+        int _courseSeat;
 
         void CaptureCourse()
         {
@@ -180,10 +181,12 @@ namespace RowVR.Rowing
             if (_frame != null && _frame.HasFrame)
             {
                 RowerForward = _frame.Forward;
-                if (!_hasCourse)
+                // A re-seat (a recenter, or the menu) puts the rower back on the course's line.
+                if (!_hasCourse || _courseSeat != _frame.SeatVersion)
                 {
                     var centre = _frame.Centre;
                     CourseOrigin = new Vector3(centre.x, 0f, centre.z);
+                    _courseSeat = _frame.SeatVersion;
                     _hasCourse = true;
                 }
                 return;

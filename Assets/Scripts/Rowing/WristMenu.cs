@@ -60,6 +60,7 @@ namespace RowVR.Rowing
         RowingRig _rig;
         BoatMotion _motion;
         PassthroughFade _passthrough;
+        BoatFrame _frame;
         SceneryLayers _scenery;
         Transform _menu;
         Material _textMaterial, _buttonMaterial, _selectedMaterial;
@@ -73,6 +74,7 @@ namespace RowVR.Rowing
             _rig = GetComponent<RowingRig>();
             _motion = GetComponent<BoatMotion>();
             _passthrough = GetComponent<PassthroughFade>();
+            _frame = GetComponent<BoatFrame>();
             _scenery = FindFirstObjectByType<SceneryLayers>();
             if (font == null || textShader == null)
             {
@@ -253,6 +255,8 @@ namespace RowVR.Rowing
             AddButton("+", Arc(InnerRadius, 90f), ink, () => SetResistance(_motion.Resistance + 1));
             AddButton("back to scene", Arc(InnerRadius, 40f), ink, () => _passthrough?.Dismiss(),
                       shown: () => _passthrough != null && _passthrough.Fade > 0.05f, width: 0.075f);
+            // Puts the boat back round the rower (#96), for when the headset's recenter is not enough.
+            AddButton("re-seat", Arc(InnerRadius, 10f), ink, () => _frame?.Reseat(), shown: () => _frame != null);
 
             // Outer arc: workouts, then scenes.
             var presets = Workout.Presets;

@@ -44,6 +44,7 @@ namespace RowVR.Rowing
         TextMesh _footer;
         Material _textMaterial;
         float _eyeHeight = float.NaN;
+        int _seatVersion;
 
         void Awake()
         {
@@ -83,6 +84,8 @@ namespace RowVR.Rowing
         {
             if (!_frame.HasFrame) return;
 
+            // Re-seated: start from the eyes as they are now, not glide from where they were.
+            if (_seatVersion != _frame.SeatVersion) { _seatVersion = _frame.SeatVersion; _eyeHeight = float.NaN; }
             if (_rig.IsTracking)
             {
                 var eye = _rig.LastSample.HeadPosition.Y;

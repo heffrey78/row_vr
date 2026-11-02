@@ -34,13 +34,17 @@ namespace RowVR.Stroke
         /// <summary>Level unit vector along the machine, toward the stern (the rower's front).</summary>
         public Vec3 Forward { get; private set; } = Vec3.Forward;
 
-        /// <summary>First guess, from where the rower is looking. Only used until motion is seen.</summary>
+        /// <summary>
+        /// A guess from where the rower is looking: the first one, or a fresh one after a
+        /// recenter (Seat). Motion seen before it says nothing about the new estimate.
+        /// </summary>
         public void Seed(Vec3 headForward)
         {
             var level = Level(headForward);
             if (level.SqrMagnitude < 1e-6f) return;
             Forward = level.Normalized;
             HasAxis = true;
+            _previousTime = double.NaN;
         }
 
         /// <summary>Feeds the midpoint of the two hands at a time.</summary>
