@@ -12,7 +12,7 @@ namespace RowVR.Rowing
     /// index fingertip.
     ///
     /// Inner arc: resistance -, its value, +, and "back to the scene" while the room is
-    /// showing (passthrough, #45). Outer arc: the workouts, then lake and rapids. Choices
+    /// showing (passthrough, #45). Outer arc: the workouts, then the lake. Choices
     /// persist (RowerSettings).
     ///
     /// When it shows is WristMenuGate (engine-free, tested): a held palm-up, never while
@@ -264,7 +264,7 @@ namespace RowVR.Rowing
             }
             var current = SceneManager.GetActiveScene().name;
             labels.Add(("lake", () => LoadScene(RowerSettings.LakeScene), () => current == RowerSettings.LakeScene));
-            labels.Add(("rapids", () => LoadScene(RowerSettings.RapidsScene), () => current == RowerSettings.RapidsScene));
+            // The rapids are shelved (#94): the scene is still built, but not offered.
             for (var i = 0; i < labels.Count; i++)
             {
                 var degrees = Mathf.Lerp(168f, 12f, (float)i / (labels.Count - 1));
