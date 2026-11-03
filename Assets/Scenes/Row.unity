@@ -724,9 +724,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: RowVR.Rowing::RowVR.Rowing.MetricsPanel
   font: {fileID: 12800000, guid: a70530211bbe4001b2c57187a89779df, type: 3}
   textShader: {fileID: 4800000, guid: 3ab63c2bcb86422ca620d145e76b72b3, type: 3}
-  towardStern: 1.15
-  toRight: 0.62
-  belowEyes: 0.18
+  distance: 200
+  elevation: 20
+  headlineBlock: 5
 --- !u!114 &1483306201
 MonoBehaviour:
   m_ObjectHideFlags: 0

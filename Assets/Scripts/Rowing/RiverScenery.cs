@@ -5,7 +5,7 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The river for the rapids (REQ-0007, illustrated per ADR-0011): close, steep banks with
+    /// The river for the rapids (#30, illustrated per #42): close, steep banks with
     /// rocky cliffs and conifers, wrapping endlessly like the lake's; and, for each rapid in
     /// the run, its boulders, standing waves and foam, placed where that rapid lies on the
     /// river.
@@ -13,7 +13,7 @@ namespace RowVR.Rowing
     /// The rough water sits mostly on the side a weak raft drifts toward (the section's
     /// DriftSide), so drifting off the line visibly carries the raft into it. The raft never
     /// hits anything: rough water costs speed in RapidsRun, and nothing jolts the view
-    /// (ADR-0012).
+    /// (#43).
     ///
     /// Scenery comes toward the rower, who faces downstream (SceneryLayers.facingTravel), and
     /// slides sideways with the raft's drift. Each rapid is one mesh, so the whole river is a

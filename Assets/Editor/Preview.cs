@@ -132,7 +132,7 @@ namespace RowVR.Editor
             Shoot(xrCamera, "eye-forward", head, Quaternion.LookRotation(forward + Vector3.down * 0.25f));
             Shoot(xrCamera, "eye-left", head, Quaternion.LookRotation(-right + forward * 0.35f + Vector3.down * 0.3f));
             Shoot(xrCamera, "eye-back", head, Quaternion.LookRotation(-forward + Vector3.down * 0.1f));
-            // Down toward the chest, where the menu card sits while resting (ADR-0013).
+            // Down toward the chest, where the menu card sits while resting (#44).
             Shoot(xrCamera, "eye-down", head, Quaternion.LookRotation(forward - right * 0.1f + Vector3.down * 0.9f));
             var outside = head - forward * 4.5f + right * 3.5f + Vector3.up * 2.2f;
             Shoot(xrCamera, "boat", outside, Quaternion.LookRotation(head + Vector3.down * 0.8f - outside));

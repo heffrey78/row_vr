@@ -1,4 +1,4 @@
-// Fades the scene out to the room (REQ-0005, ADR-0014). Drawn full screen, last, over everything but the
+// Fades the scene out to the room (#28, #45). Drawn full screen, last, over everything but the
 // cards, it multiplies the eye buffer's colour AND alpha by (1 - _Fade). Quest composites
 // passthrough under the app wherever the app's alpha is below 1, so the room shows through in
 // proportion. Scaling colour and alpha together keeps the premultiplied result correct.

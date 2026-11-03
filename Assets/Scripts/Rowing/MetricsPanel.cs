@@ -4,73 +4,102 @@ using UnityEngine;
 namespace RowVR.Rowing
 {
     /// <summary>
-    /// The rower's numbers (REQ-0006-FUNC): a hand-lettered card fixed in the boat, off to the
-    /// rower's right, like a monitor clipped to the rigger. It does not follow the head, so it
-    /// is somewhere to glance at, not something in the way.
+    /// The rower's numbers (#29), written in cloud high in the sky (#102). Pace per 500 m is the
+    /// big cloud, with time and distance as smaller clouds lower down, each with a small
+    /// hand-lettered caption. Rate, strokes and average pace are on the wrist menu (Footer).
     ///
-    /// While rowing it shows time, pace per 500 m, distance, and a line with rate, strokes
-    /// and average pace. When a session ends it becomes the session's summary until the next
-    /// stroke. The numbers come from BoatMotion's engine-free models; formatting is
-    /// MetricsFormat, both tested.
+    /// The puffs billow, and when a number changes they drift into the new digits while spares
+    /// evaporate: CloudNumerals, engine-free and tested, in BlockFont's shapes. What goes on
+    /// which line is SkyReadout, also tested. It replaced a small card in the boat (in the line
+    /// of sight) and then a board of block digits (#99, "I don't want a board").
     ///
-    /// Lettering is Patrick Hand (SIL OFL, Assets/Fonts), drawn with RowVR/Text so it renders
-    /// in both eyes under single-pass stereo. The card is RowVR/Illustrated paper with ink.
+    /// The clouds sit far out along the boat's heading, above the horizon. Like the sky dome,
+    /// they follow the head's position and only the boat's heading, so they hold a steady place
+    /// in the sky. Every puff is a painted disc over a larger shaded one, all in one mesh that is
+    /// refilled each frame (about 15k vertices; one draw call). It was drawn instanced at first,
+    /// which rendered in the Editor but not on the Quest: plain meshes are what every other
+    /// part of the scene already draws with there.
+    ///
+    /// They belong to the virtual scene: when passthrough fades the room in, they fade with it.
+    /// The class keeps its old name so the scenes' wiring holds without regenerating them.
     /// </summary>
     [RequireComponent(typeof(BoatMotion), typeof(BoatFrame))]
     public sealed class MetricsPanel : MonoBehaviour
     {
-        [Tooltip("Patrick Hand. Set by RowVR > Add Scenery.")]
+        [Tooltip("Patrick Hand, for the captions. Set by RowVR > Add Scenery.")]
         [SerializeField] Font font;
 
         [Tooltip("RowVR/Text. Set by RowVR > Add Scenery; a scene reference keeps it in the build.")]
         [SerializeField] Shader textShader;
 
-        [Header("Placement, in the boat (metres)")]
-        [SerializeField] float towardStern = 1.15f;
-        [SerializeField] float toRight = 0.62f;
-        [Tooltip("Height relative to the rower's average eye height.")]
-        [SerializeField] float belowEyes = 0.18f;
+        [Header("Placement")]
+        [Tooltip("Distance from the eyes to the clouds, metres.")]
+        [SerializeField] float distance = 200f;
 
-        const float CardWidth = 0.36f;
-        const float CardHeight = 0.28f;
+        [Tooltip("Degrees above the horizon of the pace cloud's middle.")]
+        [SerializeField] float elevation = 20f;
+
+        [Tooltip("Size of one cell of the pace cloud's lettering, metres. Five cells make a digit's height.")]
+        [SerializeField] float headlineBlock = 5f;
+
+        const int MaxPuffs = 1024;
+        const int Sides = 24;
+        // A disc: its middle and a closed ring. Each puff is two: the shaded one behind, then the body.
+        const int DiscVertices = Sides + 2;
+        const int DiscIndices = Sides * 3;
 
         BoatMotion _motion;
         BoatFrame _frame;
-        RowingRig _rig;
         SceneryLayers _scenery;
-        Transform _card;
-        TextMesh[] _labels;
-        TextMesh[] _values;
-        TextMesh _footer;
+        Material _cloudMaterial;
         Material _textMaterial;
-        float _eyeHeight = float.NaN;
+        Transform _captions;
+        Mesh _clouds;
+        Vector3[] _disc;
+        Vector3[] _vertices;
+        Color[] _colours;
+        int[] _triangles;
+        int _drawn = -1;
+        readonly SkyReadout _readout = new SkyReadout();
+        CloudLine _headline, _left, _right;
+        TextMesh _headlineLabel, _leftLabel, _rightLabel;
+
+        /// <summary>Rate, strokes and average pace (or the summary's), for the wrist menu.</summary>
+        public string Footer => _readout.Footer;
+
+        sealed class CloudLine
+        {
+            public readonly CloudNumerals Cloud = new CloudNumerals();
+            public Vector3 Offset;
+            public float Block;
+        }
 
         void Awake()
         {
             _motion = GetComponent<BoatMotion>();
             _frame = GetComponent<BoatFrame>();
-            _rig = GetComponent<RowingRig>();
             _scenery = FindFirstObjectByType<SceneryLayers>();
-            if (font == null || textShader == null)
+            _cloudMaterial = _scenery != null ? _scenery.CreateMaterial("Cloud Numerals") : null;
+            if (font == null || textShader == null || _cloudMaterial == null)
             {
-                Debug.LogWarning("[RowVR] MetricsPanel has no font or text shader. Run RowVR > Add Scenery.");
+                Debug.LogWarning("[RowVR] MetricsPanel has no font, text shader or scenery shader. Run RowVR > Add Scenery.");
                 enabled = false;
                 return;
             }
+            _cloudMaterial.SetFloat("_FogAmount", 0f);
+            _cloudMaterial.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
 
-            font.RequestCharactersInTexture("0123456789:.,-/ abcdefghijklmnopqrstuvwxyzAPMS", 96);
-            _textMaterial = new Material(textShader) { name = "Panel Lettering", mainTexture = font.material.mainTexture };
+            font.RequestCharactersInTexture("0123456789:.,-/ abcdefghijklmnopqrstuvwxyz", 96);
+            _textMaterial = new Material(textShader) { name = "Sky Captions", mainTexture = font.material.mainTexture };
             Font.textureRebuilt += OnFontRebuilt;
             Build();
-            // Stays readable over the room when passthrough fades in (ADR-0014).
-            PassthroughFade.KeepVisible(_card);
-            _card.gameObject.SetActive(false);
         }
 
         void OnDestroy()
         {
             Font.textureRebuilt -= OnFontRebuilt;
-            if (_card != null) Destroy(_card.gameObject);
+            if (_captions != null) Destroy(_captions.gameObject);
+            if (_clouds != null) Destroy(_clouds);
         }
 
         // A dynamic font re-packs its atlas when it needs new glyphs; point at the new one.
@@ -81,137 +110,174 @@ namespace RowVR.Rowing
 
         void LateUpdate()
         {
-            if (!_frame.HasFrame) return;
+            var head = _scenery.Head;
+            var shown = _frame.HasFrame && head != null && _scenery.Near.gameObject.activeInHierarchy;
+            if (_captions.gameObject.activeSelf != shown) _captions.gameObject.SetActive(shown);
+            if (!shown) return;
 
-            if (_rig.IsTracking)
-            {
-                var eye = _rig.LastSample.HeadPosition.Y;
-                _eyeHeight = float.IsNaN(_eyeHeight) ? eye : Mathf.Lerp(_eyeHeight, eye, 1f - Mathf.Exp(-Time.deltaTime / 4f));
-            }
-            if (float.IsNaN(_eyeHeight)) return;
+            // Out along the boat's heading and up; facing the eyes, never rolled.
+            var forward = _frame.Forward;
+            var direction = Quaternion.AngleAxis(-elevation, Vector3.Cross(Vector3.up, forward)) * forward;
+            var position = head.position + direction * distance;
+            var rotation = Quaternion.LookRotation(direction, Vector3.up);
+            _captions.SetPositionAndRotation(position, rotation);
 
-            // Fixed in the boat; turned once toward where the rower's eyes usually are.
-            var position = _frame.Point(towardStern, toRight, 0f);
-            position.y = _eyeHeight - belowEyes;
-            var eyes = _frame.Point(-0.3f, 0f, 0f);
-            eyes.y = _eyeHeight;
-            var facing = position - eyes;
-            facing.y *= 0.5f;
-            _card.SetPositionAndRotation(position, Quaternion.LookRotation(facing.normalized, Vector3.up));
-            if (!_card.gameObject.activeSelf) _card.gameObject.SetActive(true);
+            _readout.Update(_motion.Session, _motion.Workout, RowerSettings.Workout.Name);
+            Caption(_headlineLabel, _readout.Headline.Label);
+            Caption(_leftLabel, _readout.Left.Label);
+            Caption(_rightLabel, _readout.Right.Label);
 
-            Show(_motion.Session);
+            var count = 0;
+            count = Fill(_headline, _readout.Headline.Value, count);
+            count = Fill(_left, _readout.Left.Value, count);
+            count = Fill(_right, _readout.Right.Value, count);
+            Upload(count);
         }
 
-        void Show(SessionStats session)
+        // Writes a line's puffs into the mesh, in the captions' space, and returns the new count.
+        int Fill(CloudLine line, string text, int count)
         {
-            if (!session.Active && session.LastSummary.HasValue)
+            line.Cloud.SetText(text);
+            line.Cloud.Update(Time.timeAsDouble, Time.deltaTime);
+            foreach (var puff in line.Cloud.Puffs)
             {
-                var s = session.LastSummary.Value;
-                Set(0, "session", MetricsFormat.Time(s.ElapsedSeconds));
-                Set(1, "avg /500m", MetricsFormat.Split(s.AverageSplitSeconds));
-                Set(2, "metres", MetricsFormat.Distance(s.DistanceMetres));
-                _footer.text = $"{s.Strokes} strokes  ·  avg rate {MetricsFormat.Rate(s.AverageRate)}";
-                return;
+                if (count >= MaxPuffs) break;
+                var centre = line.Offset + puff.Position.ToVector3() * line.Block;
+                var radius = puff.Radius * line.Block;
+                // Behind every body puff, a larger shaded one, a little low: together they draw
+                // one shaded silhouette round the whole number, so it reads as a single cloud.
+                Disc(count * 2, centre + new Vector3(0f, -0.1f * radius, line.Block), radius * 1.14f);
+                Disc(count * 2 + 1, centre, radius);
+                count++;
             }
-
-            var workout = _motion.Workout;
-            var time = MetricsFormat.Time(session.ElapsedSeconds);
-            var distance = MetricsFormat.Distance(session.DistanceMetres);
-            Set(0, "time", time);
-            Set(1, "/500m", MetricsFormat.Split(session.StrokeSplitSeconds));
-            Set(2, "metres", distance);
-
-            // The chosen workout (REQ-0008) takes over the lines it counts down.
-            if (session.Active && workout != null && workout.Workout.Kind != WorkoutKind.JustRow)
-            {
-                if (workout.Finished)
-                {
-                    _footer.text = "workout complete" + IntervalSummary(workout);
-                    return;
-                }
-                switch (workout.Workout.Kind)
-                {
-                    case WorkoutKind.Timed:
-                        Set(0, "time left", MetricsFormat.Time(workout.SecondsLeft));
-                        break;
-                    case WorkoutKind.Distance:
-                        Set(2, "metres left", MetricsFormat.Distance(workout.MetresLeft));
-                        break;
-                    case WorkoutKind.Intervals:
-                        Set(0, $"{(workout.Resting ? "rest" : "work")} {workout.Interval} of {workout.Workout.Repeats}",
-                            MetricsFormat.Time(workout.SecondsLeft));
-                        break;
-                }
-            }
-
-            _footer.text = session.Active
-                ? $"rate {MetricsFormat.Rate(session.Rate)}  ·  {session.Strokes} strokes  ·  avg {MetricsFormat.Split(session.AverageSplitSeconds)}"
-                : $"{RowerSettings.Workout.Name}  ·  take a stroke to begin";
+            return count;
         }
 
-        static string IntervalSummary(WorkoutProgress workout)
+        void Disc(int disc, Vector3 centre, float radius)
         {
-            if (workout.IntervalMetres.Count == 0) return "";
-            var parts = "";
-            foreach (var m in workout.IntervalMetres) parts += (parts.Length > 0 ? " " : "") + MetricsFormat.Distance(m);
-            return "  ·  " + parts + " m";
+            var first = disc * DiscVertices;
+            for (var v = 0; v < DiscVertices; v++) _vertices[first + v] = centre + _disc[v] * radius;
         }
 
-        void Set(int row, string label, string value)
+        void Upload(int count)
         {
-            if (_labels[row].text != label) _labels[row].text = label;
-            if (_values[row].text != value) _values[row].text = value;
+            var vertices = count * 2 * DiscVertices;
+            const UnityEngine.Rendering.MeshUpdateFlags quiet = UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds;
+            if (count != _drawn)
+            {
+                // The size changed: indices must never point past the vertices, so start clean.
+                _clouds.Clear();
+                _clouds.SetVertices(_vertices, 0, vertices, quiet);
+                _clouds.SetColors(_colours, 0, vertices, quiet);
+                _clouds.SetTriangles(_triangles, 0, count * 2 * DiscIndices, 0, false);
+                _clouds.bounds = new Bounds(Vector3.zero, Vector3.one * headlineBlock * 60f);
+                _drawn = count;
+            }
+            else if (count > 0)
+            {
+                _clouds.SetVertices(_vertices, 0, vertices, quiet);
+            }
+        }
+
+        static void Caption(TextMesh label, string text)
+        {
+            if (label.text != text) label.text = text;
         }
 
         void Build()
         {
-            var palette = _scenery != null ? _scenery.Palette : null;
-            var paper = palette != null ? palette.paper : new Color(0.97f, 0.94f, 0.86f);
+            var palette = _scenery.Palette;
+            var light = palette != null ? palette.cloud : Color.white;
+            var shade = palette != null ? palette.cloudShade : new Color(0.86f, 0.84f, 0.88f);
             var ink = palette != null ? palette.ink : new Color(0.17f, 0.14f, 0.16f);
-            var soft = Color.Lerp(ink, paper, 0.45f);
+            var zenith = palette != null ? palette.skyZenith : new Color(0.55f, 0.7f, 0.84f);
 
-            _card = new GameObject("Metrics Panel").transform;
-            if (_scenery != null) _card.SetParent(_scenery.Near, false);
+            // Line space, metres: +x to the rower's right, +y up, the pace cloud's middle at 0.
+            var side = headlineBlock * 0.52f;
+            var paceBottom = -BlockFont.Rows * headlineBlock * 0.5f;
+            var sideY = paceBottom - headlineBlock * 2.2f - BlockFont.Rows * side * 0.5f;
+            var sideX = headlineBlock * 8f;
+            _headline = new CloudLine { Offset = Vector3.zero, Block = headlineBlock };
+            _left = new CloudLine { Offset = new Vector3(-sideX, sideY, 0f), Block = side };
+            _right = new CloudLine { Offset = new Vector3(sideX, sideY, 0f), Block = side };
 
-            // The card: a sheet of paper with an inked edge, a touch off-square as if pinned
-            // up by hand. Its front faces the rower (-Z of the card faces them).
-            var sheet = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            sheet.name = "Card";
-            Destroy(sheet.GetComponent<Collider>());
-            sheet.transform.SetParent(_card, false);
-            sheet.transform.localScale = new Vector3(CardWidth, CardHeight, 0.006f);
-            sheet.transform.localRotation = Quaternion.Euler(0f, 0f, -1.5f);
-            if (_scenery != null && _scenery.IllustratedShader != null)
-                IllustratedMaterials.Apply(_scenery, sheet, paper, true, 0.0025f);
-            else
-                sheet.GetComponent<Renderer>().material.color = paper;
+            _captions = new GameObject("Sky Number Captions").transform;
+            _captions.SetParent(_scenery.Near, false);
+            // Soft ink, half lost in the sky: a pencilled note, not a sign.
+            var caption = Color.Lerp(ink, zenith, 0.35f);
+            var gap = headlineBlock * 0.55f;
+            _headlineLabel = Text("Pace Caption", new Vector3(0f, paceBottom - gap, 0f), headlineBlock * 0.13f, caption);
+            var sideBottom = sideY - BlockFont.Rows * side * 0.5f - gap;
+            _leftLabel = Text("Left Caption", new Vector3(-sideX, sideBottom, 0f), headlineBlock * 0.1f, caption);
+            _rightLabel = Text("Right Caption", new Vector3(sideX, sideBottom, 0f), headlineBlock * 0.1f, caption);
 
-            _labels = new TextMesh[3];
-            _values = new TextMesh[3];
-            for (var row = 0; row < 3; row++)
-            {
-                var y = CardHeight * 0.5f - 0.05f - row * 0.068f;
-                _labels[row] = Text("Label", new Vector3(-CardWidth * 0.5f + 0.022f, y - 0.012f, -0.005f), 0.0024f, TextAnchor.LowerLeft, soft);
-                _values[row] = Text("Value", new Vector3(CardWidth * 0.5f - 0.02f, y - 0.018f, -0.005f), 0.0062f, TextAnchor.LowerRight, ink);
-            }
-            _footer = Text("Footer", new Vector3(0f, -CardHeight * 0.5f + 0.022f, -0.005f), 0.0024f, TextAnchor.LowerCenter, soft);
+            BuildClouds(light, shade);
         }
 
-        TextMesh Text(string name, Vector3 position, float size, TextAnchor anchor, Color colour)
+        /// <summary>
+        /// The mesh every puff is written into, under the captions so it moves with them. Colours
+        /// and triangles repeat per puff, so they are laid out once for the most puffs there can
+        /// be; each frame only the vertices change.
+        /// </summary>
+        void BuildClouds(Color light, Color shade)
+        {
+            _disc = new Vector3[DiscVertices];
+            var body = new Color[DiscVertices];
+            var shadow = new Color[DiscVertices];
+            // The middle sits a little high, so the light gathers toward the top.
+            _disc[0] = new Vector3(0f, 0.15f, 0f);
+            body[0] = SkyDome.ToVertexColour(light);
+            shadow[0] = SkyDome.ToVertexColour(shade);
+            var underneath = Color.Lerp(light, shade, 0.45f);
+            for (var s = 0; s <= Sides; s++)
+            {
+                var a = 2f * Mathf.PI * s / Sides;
+                var y = Mathf.Sin(a);
+                _disc[s + 1] = new Vector3(Mathf.Cos(a), y, 0f);
+                body[s + 1] = SkyDome.ToVertexColour(Color.Lerp(underneath, light, Mathf.Clamp01(y * 0.6f + 0.6f)));
+                shadow[s + 1] = shadow[0];
+            }
+
+            var discs = MaxPuffs * 2;
+            _vertices = new Vector3[discs * DiscVertices];
+            _colours = new Color[discs * DiscVertices];
+            _triangles = new int[discs * DiscIndices];
+            for (var d = 0; d < discs; d++)
+            {
+                var first = d * DiscVertices;
+                var colours = d % 2 == 0 ? shadow : body;
+                for (var v = 0; v < DiscVertices; v++) _colours[first + v] = colours[v];
+                for (var s = 0; s < Sides; s++)
+                {
+                    var i = d * DiscIndices + s * 3;
+                    _triangles[i] = first;
+                    _triangles[i + 1] = first + s + 1;
+                    _triangles[i + 2] = first + s + 2;
+                }
+            }
+
+            _clouds = new Mesh { name = "Cloud Numerals", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            _clouds.MarkDynamic();
+            var go = new GameObject("Cloud Numerals");
+            go.transform.SetParent(_captions, false);
+            go.AddComponent<MeshFilter>().sharedMesh = _clouds;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = _cloudMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
+        TextMesh Text(string name, Vector3 position, float size, Color colour)
         {
             var go = new GameObject(name);
-            go.transform.SetParent(_card, false);
+            go.transform.SetParent(_captions, false);
             go.transform.localPosition = position;
-            // TextMesh faces -Z; turn it to read from the rower's side of the card.
-            go.transform.localRotation = Quaternion.identity;
             var text = go.AddComponent<TextMesh>();
             text.font = font;
             text.fontSize = 96;
             text.characterSize = size;
-            text.anchor = anchor;
-            text.alignment = anchor == TextAnchor.LowerRight ? TextAlignment.Right
-                           : anchor == TextAnchor.LowerCenter ? TextAlignment.Center : TextAlignment.Left;
+            text.anchor = TextAnchor.UpperCenter;
+            text.alignment = TextAlignment.Center;
             text.color = colour;
             go.GetComponent<MeshRenderer>().sharedMaterial = _textMaterial;
             return text;

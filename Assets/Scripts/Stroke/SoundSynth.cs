@@ -3,7 +3,7 @@ using System;
 namespace RowVR.Stroke
 {
     /// <summary>
-    /// The sounds of the lake, synthesised (REQ-0002-FUNC, REQ-0004-FUNC): the blade going in
+    /// The sounds of the lake, synthesised (#25, #27): the blade going in
     /// and coming out, lapping water, wind, water running under the hull, and birdsong.
     ///
     /// Synthesised rather than recorded so there is nothing to license and no binary audio
@@ -130,7 +130,7 @@ namespace RowVR.Stroke
             return Normalise(Loop(output), 0.75f);
         }
 
-        /// <summary>A soft wooden tick: a menu button pressed (ADR-0013).</summary>
+        /// <summary>A soft wooden tick: a menu button pressed (#44).</summary>
         public static float[] Tick()
         {
             var output = new float[Samples(0.08f)];

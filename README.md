@@ -14,28 +14,32 @@ hand tracking counts strokes, two oars sweep in the rower's hands, sounds mark t
 finish, and (seen by the rower on 2026-09-30) the illustrated lake, the scull and the
 hand-lettered card with time, pace and distance. Speed comes from a boat model calibrated on
 real recordings. The ambient soundscape is built but not yet judged in the headset. **Built but not yet tried
-in the headset:** a forward-facing rapids scene (REQ-0007) and a hands-only menu for workouts,
-resistance and scene (REQ-0008), both checked in headless renders and an Android build.
+in the headset:** a forward-facing rapids scene (#30) and a hands-only menu for workouts,
+resistance and scene (#31), both checked in headless renders and an Android build.
 
 ## Rowing with it
 
 Put the headset on, sit at the machine, take the handle, and row. The first stroke starts the
-session; the card to your right shows time, pace per 500 m, distance, rate and strokes.
+session. Glance up: your pace per 500 m is written in cloud high in the sky ahead, with time
+and distance (in tens of metres) in smaller clouds below it. When a number changes, the clouds
+drift into the new digits; when you stop, they show the session's summary.
 
-**The menu.** Let go of the handle and rest for a few seconds: a card appears low in front of
-you. Poke its buttons with a fingertip to choose:
+**The menu.** Let go of the handle and turn your left palm toward your face: a fan of buttons
+opens on your wrist, with your rate, strokes and average pace on it. Poke the buttons with your
+right index finger to choose:
 
 - **workout**: just row, a 20:00 piece, 2,000 m, or 4 x 3:00 intervals with 1:00 rest;
 - **resistance**: match your machine's dial (1-10), so the pace means something;
 - **scene**: the lake, or the rapids.
 
-The card disappears at your first stroke and cannot be pressed while you row. Choices are
-remembered.
+Turn the palm away and it closes; it never opens while you row. Choices are remembered.
 
-![The hands-only menu appearing while resting, and going at the first stroke](docs/media/menu.gif)
+![The wrist menu while resting, with the clouds above](docs/media/menu.gif)
 
-*The menu, rendered headless (`make preview GIF=1 VIEW=menu`) from the steady recording: it
-appears after a few seconds of rest, and is gone the moment rowing starts again.*
+*The wrist menu, rendered headless (`make preview GIF=1 WRIST=1 PREVIEW_SECONDS=48`) as the
+steady recording rests and rowing starts again. Recordings carry no palm-up pose, so the render
+pins the menu in front of the head; in use it opens only on the palm-up left wrist, never while
+rowing.*
 
 **The rapids.** Facing downstream, three rapids with pools between. In a rapid, keep your
 power at or above the target on the card to hold the good line; fall short and you drift

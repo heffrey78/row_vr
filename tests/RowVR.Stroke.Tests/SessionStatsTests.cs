@@ -4,7 +4,7 @@ using RowVR.Stroke;
 
 namespace RowVR.Stroke.Tests
 {
-    /// <summary>The rower-facing numbers (REQ-0006-FUNC), on the rowing-machine recordings.</summary>
+    /// <summary>The rower-facing numbers (#29), on the rowing-machine recordings.</summary>
     [TestFixture]
     public class SessionStatsTests
     {

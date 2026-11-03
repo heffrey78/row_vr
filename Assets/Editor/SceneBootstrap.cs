@@ -49,7 +49,7 @@ namespace RowVR.Editor
         const string FadeShaderPath = "Assets/Shaders/RowVRPassthroughFade.shader";
 
         /// <summary>
-        /// Adds the scenery (ADR-0008) to the open scene, or brings existing scenery up to
+        /// Adds the scenery (#39) to the open scene, or brings existing scenery up to
         /// date. Safe to run repeatedly. Save the scene afterwards.
         /// </summary>
         [MenuItem("RowVR/Add Scenery")]
@@ -72,7 +72,7 @@ namespace RowVR.Editor
         const string RapidsScenePath = SceneDirectory + "/Rapids.unity";
 
         /// <summary>
-        /// Builds Assets/Scenes/Rapids.unity (REQ-0007) from the lake scene: same rig, hands,
+        /// Builds Assets/Scenes/Rapids.unity (#30) from the lake scene: same rig, hands,
         /// boat model and sky, turned to face downstream, with the river in place of the lake,
         /// a raft in place of the scull, a handle in place of the oars, and the rapids' run,
         /// card and sound. Rebuilds it if it exists: it is generated, not hand-edited.
@@ -232,7 +232,7 @@ namespace RowVR.Editor
                 AssetDatabase.LoadAssetAtPath<Shader>(IllustratedShaderPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
-            // Transparent black: where no layer draws, passthrough will show (ADR-0008).
+            // Transparent black: where no layer draws, passthrough will show (#39).
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
             camera.farClipPlane = 1000f;
@@ -392,7 +392,7 @@ namespace RowVR.Editor
             serializedPassthrough.FindProperty("fadeShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(FadeShaderPath);
             serializedPassthrough.ApplyModifiedPropertiesWithoutUndo();
 
-            // The wrist menu (ADR-0015; it replaced ADR-0013's chest card).
+            // The wrist menu (#46; it replaced #44's chest card).
             var menu = go.GetComponent<WristMenu>();
             if (menu == null) menu = go.AddComponent<WristMenu>();
             var serializedMenu = new SerializedObject(menu);
