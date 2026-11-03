@@ -35,8 +35,9 @@ namespace RowVR.Rowing
         [SerializeField] float inward = 0.1f;
 
         /// <summary>
-        /// Headless previews have no hands: when set, the rower is taken to be holding the left
-        /// palm up, in front of the head, so the layout can be rendered (make preview WRIST=1).
+        /// Headless previews have no hands: when set, the rower is taken to hold the left palm up,
+        /// in front of the head, whenever their hands are off the handle, so the layout can be
+        /// rendered (make preview WRIST=1).
         /// The gate still decides, so as in use the menu opens only while resting and closes
         /// when rowing starts; render it from a rest (PREVIEW_SECONDS=48 on the steady take).
         /// </summary>
@@ -131,8 +132,10 @@ namespace RowVR.Rowing
                 // camera, so the render shows it where a rower would hold it.
                 var sample = _rig.LastSample;
                 eyes = sample.HeadPosition.ToVector3();
-                tracked = true;
-                facing = 1f;
+                // The palm is up only while the hands are off the handle: once a stroke is being
+                // tracked they are on it, palms down, as in use.
+                tracked = _rig.IsTracking;
+                facing = tracked && _rig.State.Phase == StrokePhase.Unknown ? 1f : 0f;
                 centre = eyes + Level(sample.HeadForward.ToVector3()) * 0.38f + Vector3.down * 0.28f;
             }
             else
