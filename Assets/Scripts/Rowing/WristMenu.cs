@@ -35,8 +35,10 @@ namespace RowVR.Rowing
         [SerializeField] float inward = 0.1f;
 
         /// <summary>
-        /// Headless previews have no hands: when set, the menu shows in front of the head so its
-        /// layout can be rendered (make preview).
+        /// Headless previews have no hands: when set, the rower is taken to be holding the left
+        /// palm up, in front of the head, so the layout can be rendered (make preview WRIST=1).
+        /// The gate still decides, so as in use the menu opens only while resting and closes
+        /// when rowing starts; render it from a rest (PREVIEW_SECONDS=48 on the steady take).
         /// </summary>
         public static bool PreviewInFrontOfHead;
 
@@ -144,7 +146,7 @@ namespace RowVR.Rowing
             }
 
             _gate.Update(Time.timeAsDouble, tracked, facing, _rig.IsTracking ? _rig.State : default);
-            var appear = PreviewInFrontOfHead ? 1f : _gate.Appear;
+            var appear = _gate.Appear;
             var visible = appear > 0.01f;
             if (_menu.gameObject.activeSelf != visible) _menu.gameObject.SetActive(visible);
             if (!visible)
