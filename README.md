@@ -36,10 +36,10 @@ Turn the palm away and it closes; it never opens while you row. Choices are reme
 
 ![The wrist menu while resting, with the clouds above](docs/media/menu.gif)
 
-*The wrist menu, rendered headless (`make preview GIF=1 WRIST=1 PREVIEW_SECONDS=48`) as the
-steady recording rests and rowing starts again. Recordings carry no palm-up pose, so the render
-pins the menu in front of the head; in use it opens only on the palm-up left wrist, never while
-rowing.*
+*The wrist menu, rendered headless (`make preview GIF=1 WRIST=1 PREVIEW_SECONDS=42`) as the
+steady recording rests, then closing as the hands go back to the handle. Recordings carry no
+palm-up pose, so the render stands in a palm held up in front of the head whenever the hands
+are off the handle; in use it opens on the palm-up left wrist.*
 
 **The rapids.** Facing downstream, three rapids with pools between. In a rapid, keep your
 power at or above the target on the card to hold the good line; fall short and you drift
